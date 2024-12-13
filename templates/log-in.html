@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/login-styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+    <title>Tenacity-Log In</title>
+  </head>
+  <body>
+    <div class="header">
+      <h1 id="title" onclick="window.location.href='/'">Tenacity</h1>
+      <h2 id="motto">"Fall seven times, stand up eight."</h2>
+      <button class="log-in" onclick="window.location.href='/register'">
+        Sign Up
+      </button>
+    </div>
+    <div class="container" id="fade-in-1">
+      <h1 id="fade-in-2">Log In</h1>
+      <form
+        action="{{ url_for('login') }}"
+        method="POST"
+        id="fade-in-3"
+        spellcheck="false"
+      >
+        <label for="email">Email:</label>
+        <input
+          placeholder="example@gmail.com"
+          type="text"
+          id="email"
+          name="email"
+          autocorrect="off"
+          required
+        />
+
+        <label for="password">Password:</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          placeholder="PineappleOnPizza4Life!"
+          autocorrect="off"
+        />
+
+        <button type="submit">Login</button>
+      </form>
+    </div>
+    <div id="toast-container"></div>
+    <script>
+      // Show toast messages
+      function showToast(message, type = "info") {
+        const toastContainer = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        toastContainer.appendChild(toast);
+
+        // Remove the toast after the animation ends
+        setTimeout(() => {
+          toast.remove();
+        }, 3500);
+      }
+
+      // Check for an error message passed from Flask
+      const errorMessage = "{{ error }}";
+      console.log("{{error}}");
+      if (errorMessage) {
+        showToast(errorMessage);
+      }
+    </script>
+  </body>
+</html>
