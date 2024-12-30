@@ -1,0 +1,258 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #d1f7e0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  background-color: #c8f0d8;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: "Lobster", sans-serif;
+}
+
+#title {
+  font-size: 2rem;
+  margin-left: 20px;
+  cursor: pointer;
+}
+
+#motto {
+  font-size: 1.2rem;
+  text-align: center;
+  font-family: "Google Sans", sans-serif;
+}
+
+.log-in {
+  position: relative;
+  background-color: white;
+  font-family: "Google Sans", sans-serif;
+  padding: 12px;
+  padding-left: 20px;
+  padding-right: 20px;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: none;
+  margin-right: 40px;
+  cursor: pointer;
+  transition: 0.5s ease;
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.log-in::after,
+.log-in::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background-image: conic-gradient(
+    from var(--angle),
+    transparent 50%,
+    #ff923f,
+    #ff6f00
+  );
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  padding: 4px;
+  border-radius: 10px;
+  animation: 2s spin linear infinite;
+}
+
+.log-in::before {
+  filter: blur(1.5rem);
+  opacity: 0.5;
+}
+
+@keyframes spin {
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
+}
+
+.log-in:hover {
+  color: white;
+  background-image: none;
+  background-color: #ff6f00;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 35vh;
+  width: 50vw;
+  padding: 20px;
+  padding-right: 30px;
+  border-radius: 10px;
+  border: 3px solid grey;
+  /*background-color: #ffe0b2;*/
+  background-color: #ffe0b2;
+  box-shadow: 10px 10px 5px 0px rgba(0, 0, 0, 0.75);
+}
+
+.container h1 {
+  color: black;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  accent-color: blue;
+}
+
+label {
+  font-family: "Google Sans", sans-serif;
+  font-size: 1.2em;
+  margin-top: 10px;
+}
+
+input {
+  width: 50vw;
+  height: 3vh;
+  font-family: "Google Sans", sans-serif;
+  font-size: 14px;
+  padding: 10px;
+  border: 1px solid grey;
+  border-radius: 10px;
+  background-color: #ffffff;
+  transition: 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border: 1px solid blue;
+  background-color: #ffffff;
+}
+
+form button {
+  margin-top: 1vh;
+  width: 51.75vw;
+  height: 6vh;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin-top: 2vh;
+  background-color: #ff6f00;
+  cursor: pointer;
+  font-family: "Roboto", sans-serif;
+  font-size: 14px;
+  transition: background-color 0.5s ease, transform 0.5s ease;
+}
+
+#fade-in-1 {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+}
+
+#fade-in-2 {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+  animation-delay: 0.5s;
+}
+
+#fade-in-3 {
+  opacity: 0;
+  animation: fadeIn 1s forwards;
+  animation-delay: 1s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+#toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.toast {
+  background-color: #333;
+  color: #fff;
+  padding: 10px 20px;
+  margin: 5px 0;
+  border-radius: 4px;
+  font-family: "Google Sans", sans-serif;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn-m 0.5s forwards, fadeOut-m 0.5s 3s forwards;
+}
+
+@keyframes fadeIn-m {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut-m {
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 768px) {
+  #title {
+    font-size: 1.5em;
+  }
+
+  #motto {
+    display: none;
+  }
+
+  .log-in {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 5.5vh;
+    font-size: 0.9em;
+  }
+
+  .container {
+    min-height: 210px;
+    width: 80vw;
+    box-shadow: none;
+  }
+
+  input {
+    width: 95%;
+  }
+
+  form button {
+    width: 100%;
+  }
+}

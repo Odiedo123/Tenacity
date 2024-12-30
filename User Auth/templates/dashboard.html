@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/dashboard.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Lora:ital,wght@0,400..700;1,400..700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <title>Tenacity-Dashboard</title>
+  </head>
+  <body>
+    <div class="container">
+      <div id="sidebar">
+        <h1 id="logo" onclick="window.location.href='/'">Tenacity</h1>
+        <div
+          class="sidebar-section"
+          id="home"
+          onclick="window.location.href='/home'"
+        >
+          <img src="{{ url_for('static', filename='icons/home.png') }}" />
+          <a onclick="window.location.href='/home'">Home</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="dashboard"
+          onclick="window.location.href='/dashboard'"
+        >
+          <img src="{{ url_for('static', filename='icons/dashboard.png') }}" />
+          <a onclick="window.location.href='/dashboard'">Dashboard</a>
+          <div id="marker"></div>
+        </div>
+        <div
+          class="sidebar-section"
+          id="files"
+          onclick="window.location.href='/files'"
+        >
+          <img src="{{ url_for('static', filename='icons/folder.png') }}" />
+          <a onclick="window.location.href='/files'">My Files</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="upload"
+          onclick="window.location.href='/upload'"
+        >
+          <img src="{{ url_for('static', filename='icons/upload.png') }}" />
+          <a onclick="window.location.href='/files'">Upload</a>
+        </div>
+        <button class="others"><span>Coffee</span>☕</button>
+        <a class="others1" onclick="window.location.href='/logout'"
+          ><span>Log Out</span>→]</a
+        >
+      </div>
+    </div>
+    <div id="main-content">
+      <div id="header">
+        <input class="fade-in-1" placeholder="Search Files..." />
+      </div>
+      <div id="content-pane">
+        <div id="left-panel" class="fade-in-2">
+          <div id="top-left-panel">
+            <div>
+              <h1><span id="total-storage">0</span>/5GB</h1>
+              <h2>Total Space</h2>
+              <button onclick="window.location.href='/files'" id="arrow-button">
+                View files
+                <h3 id="arrow">↗</h3>
+              </button>
+              <div class="add-more">
+                <h3>+</h3>
+              </div>
+            </div>
+            <div>
+              <h1 id="percentage" style="font-size: 2.5em"></h1>
+              <div class="graphs"></div>
+              <h2>Storage available</h2>
+            </div>
+          </div>
+          <div id="bottom">
+            <h1>Storage by file type</h1>
+            <div class="main-container">
+              <div id="str-line"></div>
+              <div id="bar-container">
+                <div id="bar-1"><h3 id="mobile">Doc</h3></div>
+                <div id="bar-2"><h3 id="mobile">Img</h3></div>
+                <div id="bar-3"><h3 id="mobile">Others</h3></div>
+              </div>
+              <div id="keys">
+                <ul>
+                  <li>Documents</li>
+                  <li>Images</li>
+                  <li>Others</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="right-panel" class="fade-in-3">
+          <div id="right">
+            <div>
+              <h2>No of Files</h2>
+              <h3><span>0</span></h3>
+            </div>
+            <div>
+              <h2>Documents</h2>
+              <h3><span>0</span>MB</h3>
+            </div>
+            <div>
+              <h2>Images</h2>
+              <h3><span>0</span>MB</h3>
+            </div>
+            <div>
+              <h2>Others</h2>
+              <h3><span>0</span>MB</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="toast-container"></div>
+    <script src="{{ url_for('static', filename='javascript/dashboard.js') }}"></script>
+  </body>
+</html>

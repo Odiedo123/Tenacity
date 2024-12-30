@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tenacity-Home</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/home.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <script src="{{ url_for('static', filename='javascript/home.js') }}"></script>
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&family=Lora:ital,wght@0,400..700;1,400..700&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div id="sidebar">
+        <h1 id="logo" onclick="window.location.href='/'">Tenacity</h1>
+        <div
+          class="sidebar-section"
+          id="home"
+          onclick="window.location.href='/home'"
+        >
+          <img src="{{ url_for('static', filename='icons/home.png') }}" />
+          <a onclick="window.location.href='/home'">Home</a>
+          <div id="marker"></div>
+        </div>
+        <div
+          class="sidebar-section"
+          id="dashboard"
+          onclick="window.location.href='/dashboard'"
+        >
+          <img src="{{ url_for('static', filename='icons/dashboard.png') }}" />
+          <a onclick="window.location.href='/dashboard'">Dashboard</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="files"
+          onclick="window.location.href='/files'"
+        >
+          <img src="{{ url_for('static', filename='icons/folder.png') }}" />
+          <a onclick="window.location.href='/files'">My Files</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="upload"
+          onclick="window.location.href='/upload'"
+        >
+          <img src="{{ url_for('static', filename='icons/upload.png') }}" />
+          <a onclick="window.location.href='/files'">Upload</a>
+        </div>
+        <button class="others"><span>Coffee</span>☕</button>
+        <a class="others1" onclick="window.location.href='/logout'"
+          ><span>Log Out</span>→]</a
+        >
+      </div>
+      <div id="main-content">
+        <div id="header">
+          <input placeholder="Search Files..." />
+        </div>
+        <div id="option-container">
+          <h1>Ciao👋! <span>What can I do for you?</span></h1>
+          <button id="fade-in-2" onclick="window.location.href='/upload'">
+            I'd like to upload some files for now.
+          </button>
+          <button id="fade-in-3" onclick="window.location.href='/dashboard'">
+            Let's check out the dashboard for now.
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="comment">
+      <img src="{{ url_for('static', filename='icons/comments.png') }}" />
+    </div>
+    <div id="decoration-1"></div>
+    <div id="decoration-2"></div>
+    <div id="decoration-3"></div>
+  </body>
+</html>

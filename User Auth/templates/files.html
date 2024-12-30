@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Files</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/files.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div id="sidebar">
+        <h1 id="logo" onclick="window.location.href='/'">Tenacity</h1>
+        <div
+          class="sidebar-section"
+          id="home"
+          onclick="window.location.href='/home'"
+        >
+          <img src="{{ url_for('static', filename='icons/home.png') }}" />
+          <a onclick="window.location.href='/home'">Home</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="dashboard"
+          onclick="window.location.href='/dashboard'"
+        >
+          <img src="{{ url_for('static', filename='icons/dashboard.png') }}" />
+          <a onclick="window.location.href='/dashboard'">Dashboard</a>
+        </div>
+        <div
+          class="sidebar-section"
+          id="files"
+          onclick="window.location.href='/files'"
+        >
+          <img src="{{ url_for('static', filename='icons/folder.png') }}" />
+          <a onclick="window.location.href='/files'">My Files</a>
+          <div id="marker"></div>
+        </div>
+        <div
+          class="sidebar-section"
+          id="upload"
+          onclick="window.location.href='/upload'"
+        >
+          <img src="{{ url_for('static', filename='icons/upload.png') }}" />
+          <a onclick="window.location.href='/files'">Upload</a>
+        </div>
+        <button class="others"><span>Coffee</span>☕</button>
+        <a class="others1" onclick="window.location.href='/logout'"
+          ><span>Log Out</span>→]</a
+        >
+      </div>
+      <div id="main-content">
+        <div id="header">
+          <input id="fade-in-1" placeholder="Search Files..." />
+          <select id="sort-options" tooltip="Sort Files">
+            <option value="date" id="fade-in-2">Date</option>
+            <option value="name" id="fade-in-2">Name</option>
+            <option value="size" id="fade-in-2">Size</option>
+          </select>
+        </div>
+        <div id="hidden-prompt" class="fade-in-2">
+          <img src="/static/icons/files.png" alt="Files Icon" />
+          <h1>No Files?, No Problem!</h1>
+          <button onclick="window.location.href='/upload'">Upload Files</button>
+        </div>
+      <div class="table-container" id="fade-in-2">
+        <table id="file-list" border="1">
+          <thead>
+            <tr>
+              <th>FILE NAME</th>
+              <th class="mobile">SIZE</th>
+              <th class="mobile">TYPE</th>
+              <th class="mobile">LAST MODIFIED</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+          <!-- Files will be dynamically added here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="toast-container"></div> 
+    <script src="{{ url_for('static', filename='javascript/files.js') }}"></script>
+  </body>
+</html>

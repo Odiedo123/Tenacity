@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/login-styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&family=Lora:ital,wght@0,400..700;1,400..700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+    <title>Tenacity-Register</title>
+  </head>
+  <body>
+    <div class="header">
+      <h1 id="title" onclick="window.location.href='/'">Tenacity</h1>
+      <h2 id="motto">"Fall seven times, stand up eight."</h2>
+      <button class="log-in" onclick="window.location.href='/login'">
+        Log In
+      </button>
+    </div>
+    <div class="container" id="fade-in-1">
+      <h1 id="fade-in-2">Sign Up</h1>
+      <form
+        action="{{ url_for('register') }}"
+        method="POST"
+        id="fade-in-3"
+        spellcheck="false"
+      >
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          placeholder="example@gmail.com"
+          autocorrect="off"
+        />
+
+        <label for="password">Password:</label>
+        <input
+          type="password"
+          id="confirm-password"
+          name="password"
+          required
+          placeholder="Lumos!"
+          autocorrect="off"
+        />
+
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+    <div id="toast-container"></div>
+    <script>
+      // Show toast messages
+      function showToast(message, type = "info") {
+        const toastContainer = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+
+        toastContainer.appendChild(toast);
+
+        // Remove the toast after the animation ends
+        setTimeout(() => {
+          toast.remove();
+        }, 3500);
+      }
+
+      // Check for an error message passed from Flask
+      const errorMessage = "{{ error }}";
+      console.log("{{error}}");
+      if (errorMessage) {
+        showToast(errorMessage);
+      }
+    </script>
+  </body>
+</html>

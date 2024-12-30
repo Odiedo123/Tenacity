@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Files</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/upload.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='icons/logo.png') }}"
+      type="image/png"
+    />
+  </head>
+
+<body>
+    <div class="container">
+        <div id="sidebar">
+          <h1 id="logo" onclick="window.location.href='/'">Tenacity</h1>
+          <div
+            class="sidebar-section"
+            id="home"
+            onclick="window.location.href='/home'"
+          >
+            <img src="{{ url_for('static', filename='icons/home.png') }}" />
+            <a onclick="window.location.href='/home'">Home</a>
+          </div>
+          <div
+            class="sidebar-section"
+            id="dashboard"
+            onclick="window.location.href='/dashboard'"
+          >
+            <img src="{{ url_for('static', filename='icons/dashboard.png') }}" />
+            <a onclick="window.location.href='/dashboard'">Dashboard</a>
+          </div>
+          <div
+            class="sidebar-section"
+            id="files"
+            onclick="window.location.href='/files'"
+          >
+            <img src="{{ url_for('static', filename='icons/folder.png') }}" />
+            <a onclick="window.location.href='/files'">My Files</a>
+          </div>
+          <div
+          class="sidebar-section"
+          id="upload"
+          onclick="window.location.href='/upload'"
+        >
+          <img src="{{ url_for('static', filename='icons/upload.png') }}" />
+          <a onclick="window.location.href='/files'">Upload</a>
+          <div id="marker"></div>
+          </div>
+          <button class="others"><span>Coffee</span>☕</button>
+          <a class="others1" onclick="window.location.href='/logout'"
+            ><span>Log Out</span>→]</a
+          >
+        </div>
+        <div id="main-content" >
+            <div class="file-upload-container" id="fade-in-1">
+                <div class="drop-area" id="drop-area">
+                  <img src="{{ url_for('static', filename='icons/cloud.png') }}" />
+                  <p>Drag & drop your files here or <span id="file-browser-trigger">browse</span></p>
+                  <input type="file" id="file-input" multiple hidden>
+                </div>
+                <button id="upload-button" class="fade-in-2">Upload Files</button>
+            </div>
+            <ul id="file-list"></ul>
+        </div>
+    <div id="toast-container"></div> 
+    <script src="{{ url_for('static', filename='javascript/upload.js') }}"></script>
+</body>
+</html>

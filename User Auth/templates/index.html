@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@400;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Google+sans|Lobster|Roboto"
+    />
+    <link rel="icon" href="/static/icons/logo.png" type="image/png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&amp;family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&amp;family=Lora:ital,wght@0,400..700;1,400..700&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&amp;family=Sour+Gummy:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&amp;family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&amp;family=Lora:ital,wght@0,400..700;1,400..700&amp;family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&amp;family=Sour+Gummy:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Itim&amp;family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&amp;family=Lora:ital,wght@0,400..700;1,400..700&amp;family=Open+Sans:ital,wght@0,300..800;1,300..800&amp;family=Playwrite+HR+Lijeva:wght@100..400&amp;family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&amp;family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&amp;family=Sour+Gummy:ital,wght@0,100..900;1,100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <title>Tenacity</title>
+  </head>
+  <body>
+    <div class="header">
+      <h1 id="title" onclick="window.location.href='/'">Tenacity</h1>
+      <h2 id="motto">"Save, Innovate, Create"</h2>
+      <button
+        id="log-in"
+        class="log-in"
+        onclick="window.location.href='/login'"
+      >
+        Log In
+      </button>
+    </div>
+    <div id="main-section" class="fade-in-1">
+      <h1 class="fade-in-1">The <span>Ultimate</span> Hub for Your Files</h1>
+      <p class="fade-in-1">
+        "Save not only what you hold, but the possibilities of what can be."
+      </p>
+      <div id="img-container" class="fade-in-2">
+        <img src="/static/icons/folder.png" alt="File Icon" />
+        <div class="arrow">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <img src="/static/icons/cloud.png" alt="Cloud Icon" />
+      </div>
+      <button
+        id="sign-up"
+        onclick="window.location.href='/register'"
+        class="fade-in-3"
+      >
+        Start your journey
+      </button>
+    </div>
+    <div id="second-section">
+      <video autoplay="" loop="" muted="" id="video" class="fade-in-1">
+        <source
+          src="/static/icons/earth-animation.webm"
+          type="video/webm"
+          loading="lazy"
+        />
+        Your browser does not support WebM.
+      </video>
+      <div>
+        <h1>Seamless, Secure</h1>
+        <p>
+          Store files online and retrieve them from any device with an internet
+          connection, anywhere, anytime.
+        </p>
+        <button onclick="window.location.href='/register'">Sign Up</button>
+      </div>
+    </div>
+    <div id="third-section">
+      <img src="/static/icons/review.png" alt="Review Icon" loading="lazy" />
+      <div id="comment-section">
+        <h2>Don't Listen to me, Listen to them!</h2>
+        <div id="comment">
+          <div id="comment-header">
+            <div id="pfp" class="ian"></div>
+            <h3>Ian <span>★★★★☆</span></h3>
+          </div>
+          <p>
+            The interface is almost intuitive, and the upload speed is
+            surprisingly decent.<i>
+              I guess I should be grateful for finally feeling somewhat
+              organized, though having to access my files from anywhere is a
+              standout feature.</i
+            >
+          </p>
+        </div>
+        <div id="comment">
+          <div id="comment-header">
+            <div id="pfp" class="ivy"></div>
+            <h3>Ivy <span>★★★★★</span></h3>
+          </div>
+          <p>
+            This service has completely transformed the way I manage my files.<i>
+              The easy integration with my devices makes it easy to save and
+              retrieve files on the go. Highly recommend it for anyone looking
+              for a reliable and user-friendly solution!</i
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+    <div id="footer-section">
+      <h1>Socials:</h1>
+      <div id="logo-container">
+        <div
+          target="_blank"
+          id="youtube"
+          onclick="window.open('https://www.youtube.com/channel/UCNFFuukNWEgUSXjk52w2JcA', '_blank')"
+        >
+          <img
+            src="/static/icons/youtube.png"
+            alt="Review Icon"
+            loading="lazy"
+          />
+        </div>
+        <div id="instagram">
+          <img
+            src="/static/icons/instagram.png"
+            alt="Review Icon"
+            loading="lazy"
+          />
+        </div>
+        <div
+          target="_blank"
+          id="twitter"
+          onclick="window.open('https://x.com/Tenacity_Web', '_blank')"
+        >
+          <img
+            src="/static/icons/twitter.png"
+            alt="Review Icon"
+            loading="lazy"
+          />
+        </div>
+      </div>
+      <div id="divider"></div>
+      <h2>&copy; 2024 Tenacity. All rights reserved.</h2>
+    </div>
+    <script src="/static/javascript/index.js"></script>
+  </body>
+</html>
