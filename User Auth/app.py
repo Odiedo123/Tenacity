@@ -9,7 +9,9 @@ import configparser
 
 # Load credentials from the config file
 config = configparser.ConfigParser()
-config.read('User Auth/config.ini')
+config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+config.read(config_path)
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
@@ -377,4 +379,5 @@ def sort_files():
 
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', port=5000)
+ 
