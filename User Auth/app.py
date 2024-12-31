@@ -5,23 +5,16 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
-import configparser
-
-# Load credentials from the config file
-config = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
-config.read(config_path)
-
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 # Connect to MariaDB
 db = mysql.connector.connect(
-    host=config['mysql']['host'],
-    user=config['mysql']['user'],
-    password=config['mysql']['password'],
-    database=config['mysql']['database']
+    host=os.getenv('FLASK_HOST'),
+    user=os.getenv('FLASK_USER'),
+    password=os.getenv('FLASK_PASSWORD'),
+    database=os.getenv('FLASK_DATABASE')
 )
 
 UPLOAD_FOLDER = 'uploads'
