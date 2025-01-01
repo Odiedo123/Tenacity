@@ -11,10 +11,11 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 # Connect to MariaDB
 db = mysql.connector.connect(
-    host=os.getenv('FLASK_HOST'),
-    user=os.getenv('FLASK_USER'),
-    password=os.getenv('FLASK_PASSWORD'),
-    database=os.getenv('FLASK_DATABASE')
+    host=os.getenv('DB_HOST'),
+    user=os.getenv('DB_USER'),
+    password=os.getenv('DB_PASSWORD'),
+    database=os.getenv('DB_NAME'),
+    port=os.getenv('DB_PORT')
 )
 
 UPLOAD_FOLDER = 'uploads'
