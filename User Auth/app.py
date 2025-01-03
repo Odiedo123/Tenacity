@@ -38,6 +38,12 @@ def get_user_folder():
         return user_folder
     return None
 
+# -------- Sitemap ---------------------------------------------------------- #
+@app.route('/sitemap.xml')
+def sitemap():
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(current_directory, 'sitemap.xml')
+
 # -------- Signup ---------------------------------------------------------- #
 @app.route('/register', methods=['GET', 'POST'])
 def register():
