@@ -55,4 +55,12 @@
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
     </url>
+
+        <!-- Robots.txt -->
+    <url>
+        <loc>https://www.tenacity.ct.ws/robots.txt</loc>
+        <lastmod>2025-01-03</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
 </urlset>
