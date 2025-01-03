@@ -2,12 +2,14 @@ from flask import Flask, request,send_from_directory, jsonify, render_template, 
 import mysql.connector
 import bcrypt
 import os
+from flask_sitemap import Sitemap
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
+ext = Sitemap(app)
 
 # Connect to MariaDB
 db = mysql.connector.connect(
