@@ -31,7 +31,7 @@ flask run
 3. Access the app at `http://127.0.0.1:5000`
 
 ## 🌐 **Live Demo**
-Check out the live version: [Work in Progress]
+Check out the live version: (https://www.tenacity.ct.ws/)
 
 ## 👤 **User Authentication**
 - **Sign Up / Login:** Users can create accounts and securely log in.
