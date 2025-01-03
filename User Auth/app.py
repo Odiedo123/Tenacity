@@ -44,6 +44,12 @@ def sitemap():
     current_directory = os.path.dirname(os.path.abspath(__file__))
     return send_from_directory(current_directory, 'sitemap.xml')
 
+# -------- Robot.txt ---------------------------------------------------------- #
+@app.route('/robots.txt')
+def robots():
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(current_directory, 'robots.txt')
+
 # -------- Signup ---------------------------------------------------------- #
 @app.route('/register', methods=['GET', 'POST'])
 def register():
