@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 User-agent: *
 Allow: /
 Sitemap: https://tenacity.ct.ws/sitemap.xml
+=======
+User-agent: *
+Allow: /
+Sitemap: https://tenacity.ct.ws/sitemap.xml
+>>>>>>> abfaaa87ee9eeee7f47eb506ad3e7f01cd4564ef
