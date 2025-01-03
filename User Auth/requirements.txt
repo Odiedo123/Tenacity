@@ -12,4 +12,3 @@ python-xlib==0.33
 six==1.16.0
 Werkzeug==3.1.2
 gunicorn==23.0.0
-flask-sitemap==0.5

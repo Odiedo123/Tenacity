@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Index Page -->
+    <url>
+        <loc>www.https://tenacity.ct.ws/</loc>
+        <lastmod>2025-01-03</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+        <!-- Home Page -->
+    <url>
+        <loc>www.https://tenacity.ct.ws/home</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- Files Page -->
+    <url>
+        <loc>www.https://tenacity.ct.ws/files</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <!-- Login Page -->
+    <url>
+        <loc>www.https://tenacity.ct.ws/login</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <!-- Sign Up Page -->
+    <url>
+        <loc>https://www.tenacity.ct.ws/register</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <!-- Dashboard Page -->
+    <url>
+        <loc>https://www.tenacity.ct.ws/dashboard</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <!-- Upload Page -->
+    <url>
+        <loc>https://www.tenacity.ct.ws/upload</loc>
+        <lastmod>2025-01-01</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+</urlset>
