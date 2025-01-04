@@ -152,6 +152,7 @@ uploadButton.addEventListener("click", async () => {
       method: "POST",
       body: formData,
     });
+    showToast("Uploading Files .....");
 
     if (response.ok) {
       const result = await response.json();
