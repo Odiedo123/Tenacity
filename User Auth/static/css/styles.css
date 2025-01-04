@@ -13,12 +13,12 @@ body {
 h1,
 h2 {
   margin: 0;
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
 }
 
 p {
   margin: 0;
-  font-family: "Lato", sans-serif;
+  font-family: "Lato", Arial, Helvetica, sans-serif;
   line-height: 33px;
 }
 
@@ -48,7 +48,7 @@ span {
 #title {
   font-size: 2rem;
   margin-left: 20px;
-  font-family: "Lobster", sans-serif;
+  font-family: "Lobster", Arial, Helvetica, sans-serif;
   cursor: pointer;
 }
 
@@ -60,7 +60,7 @@ span {
 .log-in {
   position: relative;
   background-color: white;
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
   padding: 12px;
   padding-left: 20px;
   padding-right: 20px;
@@ -201,7 +201,7 @@ span {
 }
 
 #sign-up {
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 16px;
   height: 10vh;
   width: 15vw;
@@ -307,7 +307,7 @@ span {
   background-color: #ff6f00;
   border: 2px solid black;
   border-radius: 5px;
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 1em;
   cursor: pointer;
   transition: 0.3s ease;
@@ -344,7 +344,7 @@ span {
 }
 
 #comment-section h2 {
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto", Arial, Helvetica, sans-serif;
 }
 
 #comment {
@@ -367,7 +367,7 @@ span {
 }
 
 #comment-header h3 {
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto", Arial, Helvetica, sans-serif;
 }
 
 #pfp {
@@ -407,14 +407,14 @@ span {
 #footer-section h1 {
   margin-top: 30px;
   color: white;
-  font-family: "Playwrite HR Lijeva", sans-serif;
+  font-family: "Playwrite HR Lijeva", Arial, Helvetica, sans-serif;
 }
 
 #footer-section h2 {
   color: whitesmoke;
   font-size: 1.1em;
   margin-top: 45px;
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto", Arial, Helvetica, sans-serif;
 }
 
 #logo-container {

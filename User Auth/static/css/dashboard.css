@@ -13,7 +13,7 @@ h3,
 a,
 input,
 p {
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
 }
 
 .container {
@@ -96,7 +96,7 @@ p {
 .others,
 .others1 {
   text-align: center;
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 20px;
   font-weight: 200;
   cursor: pointer;
@@ -227,7 +227,7 @@ p {
   padding: 15px;
   font-size: 16px;
   margin-top: 0;
-  font-family: "Google Sans", sans-serif;
+  font-family: "Google Sans", Arial, Helvetica, sans-serif;
   cursor: pointer;
 }
 
