@@ -14,7 +14,7 @@ Welcome to **Tenacity** — the ultimate platform for secure and efficient file 
 - **Frontend:** HTML, CSS, JavaScript
 - **Backend:** Flask (Python)
 - **Database:** MySQL
-- **Hosting:** [Rasberry Pi 4]
+- **Hosting:** Render and Railway
 
 ## 📸 **Screenshots**
 ![Website Screenshot](website-screenshot.png)
@@ -57,7 +57,7 @@ git push origin feature-branch
 5. Open a pull request.
 
 ## 📧 **Contact**
-- **Email:** [odiedo12345@gmail.com]
+- **Email:** [tenacity.cloud.storage@gmail.com]
 - **LinkedIn:** [Odiedo123]
 - **GitHub:** [Odiedo123]
 
