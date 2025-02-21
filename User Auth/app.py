@@ -5,11 +5,13 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 
+load_dotenv()
 # Connect to MariaDB
 db = mysql.connector.connect(
     host=os.getenv('DB_HOST'),
