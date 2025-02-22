@@ -5,18 +5,20 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
 import boto3  # For Backblaze B2
+from botocore.client import Config  # To configure boto3
 import psycopg2  # For PostgreSQL
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
-# Initialize Backblaze B2 client
+# Initialize Backblaze B2 client with proper configuration
 s3_client = boto3.client(
     's3',
     endpoint_url=os.getenv('B2_ENDPOINT_URL'),
     aws_access_key_id=os.getenv('B2_KEY_ID'),
-    aws_secret_access_key=os.getenv('B2_APPLICATION_KEY')
+    aws_secret_access_key=os.getenv('B2_APPLICATION_KEY'),
+    config=Config(signature_version='s3v4')  # Disable unsupported headers
 )
 
 # Function to connect to PostgreSQL
@@ -237,10 +239,17 @@ def upload():
         uploaded_files = []
 
         for file in files:
+            if file.filename == '':
+                continue  # Skip empty files
+
             filename = secure_filename(file.filename)
             s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
 
             try:
+                # Debugging: Print file details
+                print(f"Uploading file: {filename}, size: {len(file.read())} bytes")
+                file.seek(0)  # Reset file pointer after reading
+
                 # Upload file to Backblaze B2
                 s3_client.upload_fileobj(
                     file,
@@ -259,7 +268,10 @@ def upload():
                 conn.commit()
                 cursor.close()
                 conn.close()
+
             except Exception as e:
+                # Debugging: Print the exception
+                print(f"Error uploading file: {e}")
                 return jsonify({"error": str(e)}), 500
 
         return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
