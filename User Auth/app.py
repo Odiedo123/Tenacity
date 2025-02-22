@@ -4,26 +4,18 @@ import os
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
-import boto3  # For Backblaze B2
-from botocore.client import Config  # To configure boto3
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import psycopg2  # For PostgreSQL
 from psycopg2.extras import RealDictCursor
+from b2sdk.v2 import B2Api, InMemoryAccountInfo  # Backblaze B2 SDK
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
-# Initialize Backblaze B2 client with proper configuration
-s3_client = boto3.client(
-    's3',
-    endpoint_url=os.getenv('B2_ENDPOINT_URL'),
-    aws_access_key_id=os.getenv('B2_KEY_ID'),
-    aws_secret_access_key=os.getenv('B2_APPLICATION_KEY'),
-    config=Config(
-        signature_version='s3v4',
-        s3={'addressing_style': 'virtual'}
-    )
-)
+# Initialize Backblaze B2 client
+info = InMemoryAccountInfo()
+b2_api = B2Api(info)
+b2_api.authorize_account("production", os.getenv('B2_KEY_ID'), os.getenv('B2_APPLICATION_KEY'))
+bucket = b2_api.get_bucket_by_name(os.getenv('B2_BUCKET_NAME'))
 
 # Function to connect to PostgreSQL
 def get_db_connection():
@@ -167,8 +159,8 @@ def calculate_storage_for_user(user_id):
     for (s3_key,) in user_files:
         try:
             # Get file metadata from Backblaze B2
-            response = s3_client.head_object(Bucket=os.getenv('B2_BUCKET_NAME'), Key=s3_key)
-            file_size = response['ContentLength']
+            file_info = bucket.get_file_info_by_name(s3_key)
+            file_size = file_info.content_length
 
             # Convert file size to MB
             file_size_mb = file_size / (1024 * 1024)
@@ -255,17 +247,7 @@ def upload():
                 file.seek(0)  # Reset file pointer after reading
 
                 # Upload file to Backblaze B2
-                s3_client.upload_fileobj(
-                    file,
-                    os.getenv('B2_BUCKET_NAME'),
-                    s3_key,
-                    ExtraArgs={
-                        'ContentType': file.content_type,  # Set content type explicitly
-                    },
-                    Config=boto3.s3.transfer.TransferConfig(
-                        use_threads=False,  # Disable threading to avoid unsupported headers
-                    )
-                )
+                bucket.upload_bytes(file.read(), s3_key)
                 uploaded_files.append(filename)
 
                 # Save file metadata to the database
@@ -279,10 +261,6 @@ def upload():
                 cursor.close()
                 conn.close()
 
-            except NoCredentialsError:
-                return jsonify({"error": "Credentials not available"}), 500
-            except PartialCredentialsError:
-                return jsonify({"error": "Incomplete credentials provided"}), 500
             except Exception as e:
                 # Debugging: Print the exception
                 print(f"Error uploading file: {e}")
@@ -310,13 +288,9 @@ def serve_file(filename):
 
         s3_key = result[0]
 
-        # Generate a pre-signed URL for the file
-        url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': os.getenv('B2_BUCKET_NAME'), 'Key': s3_key},
-            ExpiresIn=3600  # URL expires in 1 hour
-        )
-        return redirect(url)
+        # Generate a download URL for the file
+        download_url = bucket.get_download_url(s3_key)
+        return redirect(download_url)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -341,12 +315,12 @@ def list_files():
 
         # Get file metadata from Backblaze B2
         try:
-            response = s3_client.head_object(Bucket=os.getenv('B2_BUCKET_NAME'), Key=s3_key)
+            file_info = bucket.get_file_info_by_name(s3_key)
             files.append({
                 "name": filename,
-                "size": response['ContentLength'],
+                "size": file_info.content_length,
                 "type": filename.split('.')[-1],
-                "last_modified": response['LastModified'].strftime('%Y-%m-%d %H:%M:%S')
+                "last_modified": file_info.upload_timestamp
             })
         except Exception as e:
             continue  # Skip files that can't be accessed
@@ -372,7 +346,7 @@ def delete_file(filename):
         s3_key = result[0]
 
         # Delete file from Backblaze B2
-        s3_client.delete_object(Bucket=os.getenv('B2_BUCKET_NAME'), Key=s3_key)
+        bucket.delete_file_version(s3_key)
 
         # Delete file metadata from the database
         conn = get_db_connection()
@@ -410,12 +384,8 @@ def edit_file(filename):
             new_s3_key = f"user_{session['user_id']}/{new_filename}"
 
             # Rename the file in Backblaze B2
-            s3_client.copy_object(
-                Bucket=os.getenv('B2_BUCKET_NAME'),
-                CopySource={'Bucket': os.getenv('B2_BUCKET_NAME'), 'Key': s3_key},
-                Key=new_s3_key
-            )
-            s3_client.delete_object(Bucket=os.getenv('B2_BUCKET_NAME'), Key=s3_key)
+            bucket.copy_file(s3_key, new_s3_key)
+            bucket.delete_file_version(s3_key)
 
             # Update the file metadata in the database
             conn = get_db_connection()
@@ -455,12 +425,12 @@ def sort_files():
 
         # Get file metadata from Backblaze B2
         try:
-            response = s3_client.head_object(Bucket=os.getenv('B2_BUCKET_NAME'), Key=s3_key)
+            file_info = bucket.get_file_info_by_name(s3_key)
             files.append({
                 "name": filename,
-                "size": response['ContentLength'],
+                "size": file_info.content_length,
                 "type": filename.split('.')[-1],
-                "last_modified": response['LastModified'].strftime('%Y-%m-%d %H:%M:%S')
+                "last_modified": file_info.upload_timestamp
             })
         except Exception as e:
             continue  # Skip files that can't be accessed
@@ -506,13 +476,9 @@ def download_file(filename):
 
         s3_key = result[0]
 
-        # Generate a pre-signed URL for the file
-        url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': os.getenv('B2_BUCKET_NAME'), 'Key': s3_key},
-            ExpiresIn=3600  # URL expires in 1 hour
-        )
-        return redirect(url)
+        # Generate a download URL for the file
+        download_url = bucket.get_download_url(s3_key)
+        return redirect(download_url)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
