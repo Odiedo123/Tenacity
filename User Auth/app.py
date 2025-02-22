@@ -18,7 +18,7 @@ s3_client = boto3.client(
     endpoint_url=os.getenv('B2_ENDPOINT_URL'),
     aws_access_key_id=os.getenv('B2_KEY_ID'),
     aws_secret_access_key=os.getenv('B2_APPLICATION_KEY'),
-    config=Config(signature_version='s3v4')  # Disable unsupported headers
+    config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'})  # Disable unsupported headers
 )
 
 # Function to connect to PostgreSQL
@@ -254,7 +254,8 @@ def upload():
                 s3_client.upload_fileobj(
                     file,
                     os.getenv('B2_BUCKET_NAME'),
-                    s3_key
+                    s3_key,
+                    ExtraArgs={'ContentType': file.content_type}  # Set content type explicitly
                 )
                 uploaded_files.append(filename)
 
