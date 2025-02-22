@@ -56,8 +56,11 @@ def register():
         # Hash the password using bcrypt
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
+        # Decode the hashed password to a UTF-8 string
+        hashed_password_str = hashed_password.decode('utf-8')
+
         # Insert the new user into the database
-        cursor.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, hashed_password))
+        cursor.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, hashed_password_str))
         conn.commit()
         cursor.close()
         conn.close()
