@@ -316,11 +316,13 @@ def list_files():
         # Get file metadata from Backblaze B2
         try:
             file_info = bucket.get_file_info_by_name(s3_key)
+            last_modified_timestamp = file_info.upload_timestamp / 1000  # Convert to seconds
+            last_modified_readable = datetime.fromtimestamp(last_modified_timestamp).strftime('%Y-%m-%d %H:%M:%S')
             files.append({
                 "name": filename,
                 "size": file_info.content_length,
                 "type": filename.split('.')[-1],
-                "last_modified": file_info.upload_timestamp
+                "last_modified": last_modified_readable
             })
         except Exception as e:
             continue  # Skip files that can't be accessed

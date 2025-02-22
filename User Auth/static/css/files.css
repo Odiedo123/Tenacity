@@ -97,6 +97,10 @@ span {
   color: transparent;
 }
 
+#red {
+  color: red;
+}
+
 #marker {
   position: absolute;
   top: 3px;
