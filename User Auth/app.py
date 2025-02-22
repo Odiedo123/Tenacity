@@ -6,6 +6,7 @@ from datetime import datetime
 from functools import wraps
 import boto3  # For Backblaze B2
 from botocore.client import Config  # To configure boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 import psycopg2  # For PostgreSQL
 from psycopg2.extras import RealDictCursor
 
@@ -18,7 +19,10 @@ s3_client = boto3.client(
     endpoint_url=os.getenv('B2_ENDPOINT_URL'),
     aws_access_key_id=os.getenv('B2_KEY_ID'),
     aws_secret_access_key=os.getenv('B2_APPLICATION_KEY'),
-    config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'})  # Disable unsupported headers
+    config=Config(
+        signature_version='s3v4',
+        s3={'addressing_style': 'virtual'}
+    )
 )
 
 # Function to connect to PostgreSQL
@@ -255,7 +259,12 @@ def upload():
                     file,
                     os.getenv('B2_BUCKET_NAME'),
                     s3_key,
-                    ExtraArgs={'ContentType': file.content_type}  # Set content type explicitly
+                    ExtraArgs={
+                        'ContentType': file.content_type,  # Set content type explicitly
+                    },
+                    Config=boto3.s3.transfer.TransferConfig(
+                        use_threads=False,  # Disable threading to avoid unsupported headers
+                    )
                 )
                 uploaded_files.append(filename)
 
@@ -270,6 +279,10 @@ def upload():
                 cursor.close()
                 conn.close()
 
+            except NoCredentialsError:
+                return jsonify({"error": "Credentials not available"}), 500
+            except PartialCredentialsError:
+                return jsonify({"error": "Incomplete credentials provided"}), 500
             except Exception as e:
                 # Debugging: Print the exception
                 print(f"Error uploading file: {e}")
