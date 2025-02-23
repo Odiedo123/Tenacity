@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   function updateBarWidths(data) {
     function setBarWidth(barSelector, value, maxValue) {
-      const minPercent = 30;
+      const minPercent = 2;
       const maxPercent = 80;
       const width = Math.max(
         minPercent,
