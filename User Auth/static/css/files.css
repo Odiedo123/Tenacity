@@ -84,7 +84,7 @@ body {
   font-size: 16px;
   width: 10vw;
   height: 6vh;
-  border: 1px solid gold;
+  border: 3px solid gold;
 }
 
 .others1 {
@@ -167,6 +167,7 @@ select {
   background-color: whitesmoke;
   color: black;
   font-family: "Google Sans", sans-serif;
+  cursor: pointer;
 }
 
 .table-container * {
