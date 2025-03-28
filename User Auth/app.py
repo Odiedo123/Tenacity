@@ -30,6 +30,12 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
+
+# --------------Bypass free tier idling-------------------------------#
+@app.route('/health')
+def health_check():
+    return jsonify(status="OK", time=datetime.now()), 200
+
 # -------- Sitemap ---------------------------------------------------------- #
 @app.route('/sitemap.xml')
 def sitemap():
