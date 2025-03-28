@@ -137,6 +137,7 @@ uploadButton.addEventListener("click", async () => {
 
   // Check if the projected total size exceeds the limit
   if (projectedTotalSize > MAX_TOTAL_STORAGE) {
+    showToast("Uploading Files .....");
     showToast(`Total storage will exceed 5GB! Upload not allowed.`, "error");
     return;
   }
@@ -146,13 +147,12 @@ uploadButton.addEventListener("click", async () => {
 
   const formData = new FormData();
   files.forEach((file) => formData.append("files", file)); // Use "files" as the field name
-
+  showToast("Uploading Files .....");
   try {
     const response = await fetch("/upload", {
       method: "POST",
       body: formData,
     });
-    showToast("Uploading Files .....");
 
     if (response.ok) {
       const result = await response.json();
