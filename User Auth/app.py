@@ -21,6 +21,15 @@ b2_api = B2Api(info)
 b2_api.authorize_account("production", os.getenv('B2_KEY_ID'), os.getenv('B2_APPLICATION_KEY'))
 bucket = b2_api.get_bucket_by_name(os.getenv('B2_BUCKET_NAME'))
 
+
+# -------- Allow CORS policy--------------------------------------- #
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
 # -------- Sitemap ---------------------------------------------------------- #
 @app.route('/sitemap.xml')
 def sitemap():
