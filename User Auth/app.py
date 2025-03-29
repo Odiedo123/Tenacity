@@ -1,12 +1,11 @@
 from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response
 import bcrypt
 import os
-import requests  # Added for file downloads
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
 from supabase import create_client, Client
-from b2sdk.v2 import B2Api, InMemoryAccountInfo  # Backblaze B2 SDK
+from b2sdk.v2 import B2Api, InMemoryAccountInfo
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
@@ -39,7 +38,7 @@ def handle_options():
         response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         return response
 
-# --------------Bypass free tier idling-------------------------------#
+# --------------Bypass free tier idling using Uptime Robot-------------------------------#
 @app.route('/health')
 def health_check():
     return jsonify(status="OK", time=datetime.now()), 200
@@ -191,6 +190,7 @@ def calculate_storage_for_user(user_id):
     used_storage_gb = used_storage / 1024  # Convert MB to GB
 
     return total_storage_gb, used_storage_gb, file_counts  # Return both total and used in GB
+
 
 @app.route('/api/storage', methods=['GET'])
 @login_required
@@ -416,8 +416,7 @@ def redirect_to_home():
 def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
-# -------- Download (Fixed Implementation) ---------------------------------------------------------- #
-@app.route('/files/<filename>', methods=['GET'])
+# -------- Download (Fixed Implementation) ---------------------------------------------------------- #@app.route('/files/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
     try:
@@ -436,7 +435,7 @@ def download_file(filename):
         # 2. Get file info and generate authorized download URL
         file_info = bucket.get_file_info_by_name(s3_key)
         download_url = bucket.get_download_url(
-            file_name=s3_key,
+            s3_key,  # Correct parameter name is the file path/name
             b2_content_disposition=f'attachment; filename="{secure_filename(filename)}"'
         )
 
