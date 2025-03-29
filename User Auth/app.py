@@ -330,21 +330,35 @@ def list_files():
 @login_required
 def delete_file(filename):
     try:
-        # Get the S3 key for the file from Supabase
-        file_data = supabase.table('files').select('filepath').eq('filename', filename).eq('user_id', session['user_id']).execute()
+        # 1. Get file metadata from Supabase
+        file_data = supabase.table('files') \
+            .select('filepath') \
+            .eq('filename', secure_filename(filename)) \
+            .eq('user_id', session['user_id']) \
+            .execute()
+        
         if not file_data.data:
             return jsonify({"error": "File not found"}), 404
 
         s3_key = file_data.data[0]['filepath']
 
-        # Delete file from Backblaze B2
-        bucket.delete_file_version(s3_key)
+        # 2. Get file version info from Backblaze
+        file_info = bucket.get_file_info_by_name(s3_key)
+        
+        # 3. Delete from Backblaze (using both ID and name)
+        bucket.delete_file_version(file_info.id_, file_info.file_name)
 
-        # Delete file metadata from Supabase
-        supabase.table('files').delete().eq('filename', filename).eq('user_id', session['user_id']).execute()
+        # 4. Delete from Supabase
+        supabase.table('files') \
+            .delete() \
+            .eq('filename', filename) \
+            .eq('user_id', session['user_id']) \
+            .execute()
 
         return jsonify({"message": "File deleted successfully"}), 200
+
     except Exception as e:
+        app.logger.error(f"Delete error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 # -------- Rename ---------------------------------------------------------- #
