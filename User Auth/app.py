@@ -1,6 +1,7 @@
 from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response
 import bcrypt
 import os
+import requests  # Added for file downloads
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
@@ -21,15 +22,22 @@ b2_api = B2Api(info)
 b2_api.authorize_account("production", os.getenv('B2_KEY_ID'), os.getenv('B2_APPLICATION_KEY'))
 bucket = b2_api.get_bucket_by_name(os.getenv('B2_BUCKET_NAME'))
 
-
 # -------- Allow CORS policy--------------------------------------- #
 @app.after_request
 def add_cors_headers(response):
     response.headers['Access-Control-Allow-Origin'] = 'https://www.tenacity.ct.ws'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
+@app.before_request
+def handle_options():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        return response
 
 # --------------Bypass free tier idling-------------------------------#
 @app.route('/health')
@@ -408,7 +416,7 @@ def redirect_to_home():
 def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
-# -------- Download ---------------------------------------------------------- #
+# -------- Download (Fixed Implementation) ---------------------------------------------------------- #
 @app.route('/files/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
@@ -425,18 +433,35 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Get file from Backblaze (returns a file-like object)
+        # 2. Get file info and download URL
         file_info = bucket.get_file_info_by_name(s3_key)
-        downloaded_file = bucket.download_file_by_name(s3_key)
+        download_url = bucket.get_download_url(s3_key)
 
-        # 3. Create response using the file object directly
-        response = make_response(downloaded_file)
-        response.headers.update({
-            "Content-Type": file_info.content_type or 'application/octet-stream',
-            "Content-Disposition": f"attachment; filename={secure_filename(filename)}",
-            "Content-Length": str(file_info.content_length),
-            "Access-Control-Expose-Headers": "Content-Disposition"
-        })
+        # 3. Fetch the file content from Backblaze
+        b2_response = requests.get(
+            download_url,
+            stream=True,
+            headers={'Authorization': f"Bearer {os.getenv('B2_APPLICATION_KEY')}"}
+        )
+
+        # 4. Verify the download was successful
+        if b2_response.status_code != 200:
+            raise Exception(f"Backblaze returned status {b2_response.status_code}")
+
+        # 5. Create streaming response
+        def generate():
+            for chunk in b2_response.iter_content(chunk_size=8192):
+                yield chunk
+
+        response = Response(
+            generate(),
+            headers={
+                "Content-Type": file_info.content_type or 'application/octet-stream',
+                "Content-Disposition": f"attachment; filename={secure_filename(filename)}",
+                "Content-Length": str(file_info.content_length),
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
         return response
 
     except Exception as e:
