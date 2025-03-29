@@ -433,36 +433,15 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Get file info and download URL
+        # 2. Get file info and generate authorized download URL
         file_info = bucket.get_file_info_by_name(s3_key)
-        download_url = bucket.get_download_url(s3_key)
-
-        # 3. Fetch the file content from Backblaze
-        b2_response = requests.get(
-            download_url,
-            stream=True,
-            headers={'Authorization': f"Bearer {os.getenv('B2_APPLICATION_KEY')}"}
+        download_url = bucket.get_download_url(
+            file_name=s3_key,
+            b2_content_disposition=f'attachment; filename="{secure_filename(filename)}"'
         )
 
-        # 4. Verify the download was successful
-        if b2_response.status_code != 200:
-            raise Exception(f"Backblaze returned status {b2_response.status_code}")
-
-        # 5. Create streaming response
-        def generate():
-            for chunk in b2_response.iter_content(chunk_size=8192):
-                yield chunk
-
-        response = Response(
-            generate(),
-            headers={
-                "Content-Type": file_info.content_type or 'application/octet-stream',
-                "Content-Disposition": f"attachment; filename={secure_filename(filename)}",
-                "Content-Length": str(file_info.content_length),
-                "Access-Control-Expose-Headers": "Content-Disposition"
-            }
-        )
-        return response
+        # 3. Redirect to the pre-authorized URL
+        return redirect(download_url)
 
     except Exception as e:
         app.logger.error(f"Download failed: {type(e).__name__}: {str(e)}", exc_info=True)
