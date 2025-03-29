@@ -1,0 +1,7 @@
+[console_scripts]
+b2 = b2._internal.b2v4.__main__:main
+b2v3 = b2._internal.b2v3.__main__:main
+b2v4 = b2._internal.b2v4.__main__:main
+
+[gui_scripts]
+

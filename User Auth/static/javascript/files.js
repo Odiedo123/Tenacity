@@ -85,9 +85,7 @@ async function fetchFiles() {
         deleteIcon.classList.add("action-icon");
         deleteIcon.onclick = () => deleteFile(file.name);
         actionCell.appendChild(deleteIcon);
-        // Reapply the current sorting criteria
-        const currentSortBy = document.getElementById("sort-options").value; // Get selected sorting option
-        sortFiles(currentSortBy); // Reapply sorting
+
         // Append all columns to the row
         row.appendChild(nameCell);
         row.appendChild(sizeCell);
@@ -98,6 +96,10 @@ async function fetchFiles() {
         // Add the row to the table
         fileTableBody.appendChild(row);
       });
+
+      // Reapply the current sorting criteria
+      const currentSortBy = document.getElementById("sort-options").value;
+      sortFiles(currentSortBy);
 
       toggleFilePrompt();
     } else {
@@ -142,23 +144,27 @@ async function deleteFile(fileName) {
   try {
     const response = await fetch(`/files/delete/${fileName}`, {
       method: "DELETE",
+      credentials: "include", // For cookies
+      headers: {
+        "Content-Type": "application/json",
+        // Add Authorization header if using JWT
+        // 'Authorization': `Bearer ${yourJWT}`
+      },
     });
 
     if (response.ok) {
       showToast("File deleted successfully!");
       fetchFiles(); // Refresh the file list
     } else {
+      const errorData = await response.json();
+      console.error("Delete error:", errorData);
       showToast("Failed to delete the file.");
     }
   } catch (error) {
+    console.error("Delete error:", error);
     showToast("Error deleting file: " + error);
   }
-  // Reapply the current sorting criteria
-  const currentSortBy = document.getElementById("sort-options").value; // Get selected sorting option
-  sortFiles(currentSortBy); // Reapply sorting
 }
-
-// Call this function after table modifications like sorting or deleting
 
 function parseFileSize(sizeStr) {
   const units = {
@@ -216,7 +222,6 @@ function sortFiles(sortBy) {
         if (isNaN(valueB.getTime())) valueB = new Date(0);
 
         return valueB - valueA; // Sort from most recent to oldest
-      // Sort from most recent to oldest
       default:
         return 0; // No sorting
     }
@@ -243,4 +248,6 @@ sortSelect.addEventListener("change", function () {
 });
 
 // Call fetchFiles when the page loads
-fetchFiles();
+document.addEventListener("DOMContentLoaded", () => {
+  fetchFiles();
+});
