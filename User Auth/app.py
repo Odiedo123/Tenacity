@@ -461,21 +461,29 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Download file from Backblaze
+        # 2. Get file from Backblaze
         downloaded_file = bucket.download_file_by_name(s3_key)
         file_info = bucket.get_file_info_by_name(s3_key)
 
-        # 3. Create a streaming response
-        response = make_response(downloaded_file.content)
-        response.headers['Content-Type'] = file_info.content_type or 'application/octet-stream'
-        response.headers['Content-Disposition'] = f'attachment; filename="{secure_filename(filename)}"'
-        response.headers['Content-Length'] = str(file_info.content_length)
-        response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
-        
+        # 3. Stream the response
+        def generate():
+            with downloaded_file:
+                for chunk in iter(lambda: downloaded_file.read(8192), b''):
+                    yield chunk
+
+        response = Response(
+            generate(),
+            headers={
+                "Content-Type": file_info.content_type or 'application/octet-stream',
+                "Content-Disposition": f"attachment; filename={secure_filename(filename)}",
+                "Content-Length": str(file_info.content_length),
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
         return response
 
     except Exception as e:
-        app.logger.error(f"Download failed: {str(e)}")
+        app.logger.error(f"Download failed: {str(e)}", exc_info=True)
         return jsonify({
             "error": "File download failed",
             "details": str(e)
