@@ -1,4 +1,4 @@
-from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response
+from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response
 import bcrypt
 import os
 from werkzeug.utils import secure_filename
@@ -449,18 +449,37 @@ def redirect_to_dashboard():
 @login_required
 def download_file(filename):
     try:
-        # Get the S3 key for the file from Supabase
-        file_data = supabase.table('files').select('filepath').eq('filename', filename).eq('user_id', session['user_id']).execute()
+        # 1. Verify file ownership
+        file_data = supabase.table('files') \
+            .select('filepath') \
+            .eq('filename', secure_filename(filename)) \
+            .eq('user_id', session['user_id']) \
+            .execute()
+        
         if not file_data.data:
             return jsonify({"error": "File not found"}), 404
 
         s3_key = file_data.data[0]['filepath']
 
-        # Generate a download URL for the file
-        download_url = bucket.get_download_url(s3_key)
-        return redirect(download_url)
+        # 2. Download file from Backblaze
+        downloaded_file = bucket.download_file_by_name(s3_key)
+        file_info = bucket.get_file_info_by_name(s3_key)
+
+        # 3. Create a streaming response
+        response = make_response(downloaded_file.content)
+        response.headers['Content-Type'] = file_info.content_type or 'application/octet-stream'
+        response.headers['Content-Disposition'] = f'attachment; filename="{secure_filename(filename)}"'
+        response.headers['Content-Length'] = str(file_info.content_length)
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        
+        return response
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        app.logger.error(f"Download failed: {str(e)}")
+        return jsonify({
+            "error": "File download failed",
+            "details": str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
