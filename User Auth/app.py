@@ -261,42 +261,6 @@ def upload():
 
     return render_template('upload.html')
 
-# -------- File serving ----------------------------------------------------- #
-@app.route('/files/<filename>')
-@login_required
-def serve_file(filename):
-    try:
-        # Verify file ownership
-        file_data = supabase.table('files') \
-            .select('filepath') \
-            .eq('filename', secure_filename(filename)) \
-            .eq('user_id', session['user_id']) \
-            .execute()
-        
-        if not file_data.data:
-            return jsonify({"error": "File not found"}), 404
-
-        s3_key = file_data.data[0]['filepath']
-        
-        # Download file from Backblaze as a stream
-        file_info = bucket.get_file_info_by_name(s3_key)
-        file_response = bucket.download_file_by_name(s3_key)
-        
-        # Stream the file through Flask with proper headers
-        return Response(
-            file_response.content,
-            headers={
-                "Content-Type": file_info.content_type,
-                "Content-Disposition": f"attachment; filename={secure_filename(filename)}",
-                "Content-Length": str(file_info.content_length),
-                "Access-Control-Expose-Headers": "Content-Disposition"
-            }
-        )
-        
-    except Exception as e:
-        app.logger.error(f"File serve error: {str(e)}")
-        return jsonify({"error": "Failed to serve file"}), 500
-
 # -------- File listing ----------------------------------------------------- #
 @app.route('/files/list', methods=['GET'])
 @login_required
