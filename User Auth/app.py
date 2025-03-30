@@ -416,7 +416,8 @@ def redirect_to_home():
 def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
-# -------- Download (Fixed Implementation) ---------------------------------------------------------- #@app.route('/files/<filename>', methods=['GET'])
+# -------- Download (Fixed Implementation) ---------------------------------------------------------- #
+@app.route('/files/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
     try:
