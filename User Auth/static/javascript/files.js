@@ -110,21 +110,35 @@ async function fetchFiles() {
   }
 }
 
-// Function to download a file (UPDATED to work with Flask endpoint)
-function downloadFile(fileName) {
+// Function to download a file (UPDATED to handle authenticated downloads)
+async function downloadFile(fileName) {
   try {
-    // Encode filename for URL safety
-    const encodedFileName = encodeURIComponent(fileName);
+    showToast("Preparing download...", "info");
 
-    // Let Flask handle the redirect to S3
-    window.location.href = `/files/download/${encodedFileName}`;
+    // 1. Get the authenticated download URL from Flask
+    const response = await fetch(
+      `/files/download/${encodeURIComponent(fileName)}`
+    );
+    const data = await response.json();
 
-    // Show toast after a short delay to ensure redirect happens
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to prepare download");
+    }
+
+    // 2. Create a hidden iframe to trigger the download
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = data.download_url;
+    document.body.appendChild(iframe);
+
+    // 3. Clean up after download starts
     setTimeout(() => {
-      showToast("Download started...");
-    }, 500);
+      document.body.removeChild(iframe);
+      showToast("Download started!", "success");
+    }, 3000);
   } catch (error) {
-    showToast("Error initiating download: " + error, "error");
+    console.error("Download error:", error);
+    showToast(`Download failed: ${error.message}`, "error");
   }
 }
 

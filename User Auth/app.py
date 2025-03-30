@@ -3,7 +3,7 @@ import bcrypt
 import os
 import requests
 from werkzeug.utils import secure_filename
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from supabase import create_client, Client
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
@@ -434,15 +434,17 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Generate a pre-signed download URL (works with b2sdk v1+)
-        download_url = bucket.get_download_url(s3_key)
+        # 2. Generate a pre-signed download URL with auth
+        download_url = bucket.get_download_url(
+            s3_key,
+            b2_content_disposition=f'attachment; filename="{secure_filename(filename)}"',
+            duration=timedelta(minutes=5)  # URL valid for 5 minutes
+        )
         
-        # 3. Force download with original filename
-        encoded_filename = requests.utils.quote(secure_filename(filename))
-        download_url += f"?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
-        
-        # 4. Redirect to the S3 download URL
-        return redirect(download_url)
+        return jsonify({
+            "download_url": download_url,
+            "filename": secure_filename(filename)
+        })
 
     except Exception as e:
         app.logger.error(f"Download failed: {str(e)}")
