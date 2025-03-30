@@ -1,6 +1,7 @@
 from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response
 import bcrypt
 import os
+import requests
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
@@ -417,11 +418,11 @@ def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
 # -------- Download (Fixed Implementation) ---------------------------------------------------------- #
-@app.route('/files/<filename>', methods=['GET'])
+@app.route('/files/download/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
     try:
-        # 1. Verify file ownership
+        # 1. Verify file exists in database
         file_data = supabase.table('files') \
             .select('filepath') \
             .eq('filename', secure_filename(filename)) \
@@ -433,22 +434,18 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Get file info and generate authorized download URL
-        file_info = bucket.get_file_info_by_name(s3_key)
-        download_url = bucket.get_download_url(
-            s3_key,  # Correct parameter name is the file path/name
-            b2_content_disposition=f'attachment; filename="{secure_filename(filename)}"'
-        )
-
-        # 3. Redirect to the pre-authorized URL
+        # 2. Generate download URL (works with b2sdk v1+)
+        download_url = bucket.get_download_url(s3_key)
+        
+        # 3. Force download with filename
+        encoded_filename = requests.utils.quote(secure_filename(filename))
+        download_url += f"?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
+        
         return redirect(download_url)
 
     except Exception as e:
-        app.logger.error(f"Download failed: {type(e).__name__}: {str(e)}", exc_info=True)
-        return jsonify({
-            "error": "File download failed",
-            "details": f"{type(e).__name__}: {str(e)}"
-        }), 500
+        app.logger.error(f"Download failed: {str(e)}")
+        return jsonify({"error": "Download failed", "details": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
