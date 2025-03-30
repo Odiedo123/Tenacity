@@ -417,7 +417,7 @@ def redirect_to_home():
 def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
-# -------- Download (Fixed Implementation) ---------------------------------------------------------- #
+# -------- Download Files ---------------------------------------------------------- #
 @app.route('/files/download/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
@@ -434,13 +434,14 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Generate download URL (works with b2sdk v1+)
+        # 2. Generate a pre-signed download URL (works with b2sdk v1+)
         download_url = bucket.get_download_url(s3_key)
         
-        # 3. Force download with filename
+        # 3. Force download with original filename
         encoded_filename = requests.utils.quote(secure_filename(filename))
         download_url += f"?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
         
+        # 4. Redirect to the S3 download URL
         return redirect(download_url)
 
     except Exception as e:

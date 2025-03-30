@@ -67,7 +67,7 @@ async function fetchFiles() {
         const modifiedCell = document.createElement("td");
         modifiedCell.textContent = file.last_modified;
 
-        // Action column (Download, Edit, Delete)
+        // Action column (Download, Delete)
         const actionCell = document.createElement("td");
 
         // Download icon
@@ -110,29 +110,21 @@ async function fetchFiles() {
   }
 }
 
-// Function to download a file
-async function downloadFile(fileName) {
+// Function to download a file (UPDATED to work with Flask endpoint)
+function downloadFile(fileName) {
   try {
-    const response = await fetch(`/files/${fileName}`);
-    if (response.ok) {
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+    // Encode filename for URL safety
+    const encodedFileName = encodeURIComponent(fileName);
 
-      // Create a temporary anchor element
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
+    // Let Flask handle the redirect to S3
+    window.location.href = `/files/download/${encodedFileName}`;
 
-      // Cleanup
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } else {
-      showToast("Failed to download the file.");
-    }
+    // Show toast after a short delay to ensure redirect happens
+    setTimeout(() => {
+      showToast("Download started...");
+    }, 500);
   } catch (error) {
-    showToast("Error downloading file: " + error);
+    showToast("Error initiating download: " + error, "error");
   }
 }
 
@@ -144,28 +136,27 @@ async function deleteFile(fileName) {
   try {
     const response = await fetch(`/files/delete/${fileName}`, {
       method: "DELETE",
-      credentials: "include", // For cookies
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        // Add Authorization header if using JWT
-        // 'Authorization': `Bearer ${yourJWT}`
       },
     });
 
     if (response.ok) {
-      showToast("File deleted successfully!");
+      showToast("File deleted successfully!", "success");
       fetchFiles(); // Refresh the file list
     } else {
       const errorData = await response.json();
       console.error("Delete error:", errorData);
-      showToast("Failed to delete the file.");
+      showToast("Failed to delete the file.", "error");
     }
   } catch (error) {
     console.error("Delete error:", error);
-    showToast("Error deleting file: " + error);
+    showToast("Error deleting file: " + error, "error");
   }
 }
 
+// Helper function to parse file size for sorting
 function parseFileSize(sizeStr) {
   const units = {
     Bytes: 1,
@@ -175,13 +166,10 @@ function parseFileSize(sizeStr) {
     TB: 1024 ** 4,
   };
 
-  // Match number and unit
   const match = sizeStr.match(/^([\d.]+)\s*(Bytes|KB|MB|GB|TB)$/i);
-
-  if (!match) return 0; // Return 0 if format is unrecognized
-
-  const [_, value, unit] = match; // Extract value and unit
-  return parseFloat(value) * units[unit.toUpperCase()]; // Convert to bytes
+  if (!match) return 0;
+  const [_, value, unit] = match;
+  return parseFloat(value) * units[unit.toUpperCase()];
 }
 
 // Function to sort files based on selected option
@@ -194,40 +182,33 @@ function sortFiles(sortBy) {
 
     switch (sortBy) {
       case "name":
-        valueA = a.children[0].textContent.toLowerCase(); // File name column
+        valueA = a.children[0].textContent.toLowerCase();
         valueB = b.children[0].textContent.toLowerCase();
         return valueA.localeCompare(valueB);
 
       case "size":
-        valueA = parseFileSize(a.children[1].textContent); // Parse file size into bytes
+        valueA = parseFileSize(a.children[1].textContent);
         valueB = parseFileSize(b.children[1].textContent);
         return valueB - valueA; // Sort from largest to smallest
 
       case "type":
-        valueA = a.children[2].textContent.toLowerCase(); // File type column
+        valueA = a.children[2].textContent.toLowerCase();
         valueB = b.children[2].textContent.toLowerCase();
         return valueA.localeCompare(valueB);
 
       case "date":
-        // Replace with the correct index for the date column
         const dateA = a.children[3].textContent.trim();
         const dateB = b.children[3].textContent.trim();
-
-        // Convert to Date objects (ensures compatibility)
         valueA = new Date(dateA.replace(" ", "T"));
         valueB = new Date(dateB.replace(" ", "T"));
-
-        // Handle invalid dates gracefully
-        if (isNaN(valueA.getTime())) valueA = new Date(0); // Default to earliest date
+        if (isNaN(valueA.getTime())) valueA = new Date(0);
         if (isNaN(valueB.getTime())) valueB = new Date(0);
-
         return valueB - valueA; // Sort from most recent to oldest
       default:
-        return 0; // No sorting
+        return 0;
     }
   });
 
-  // Clear the current table and append sorted rows
   fileTableBody.innerHTML = "";
   rows.forEach((row) => fileTableBody.appendChild(row));
 }
@@ -243,7 +224,7 @@ function formatFileSize(bytes) {
 // Add event listener for sorting files
 const sortSelect = document.getElementById("sort-options");
 sortSelect.addEventListener("change", function () {
-  const selectedSort = sortSelect.value; // Get selected sort option
+  const selectedSort = sortSelect.value;
   sortFiles(selectedSort);
 });
 
