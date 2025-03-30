@@ -434,15 +434,15 @@ def download_file(filename):
 
         s3_key = file_data.data[0]['filepath']
 
-        # 2. Generate a pre-signed download URL with auth
-        download_url = bucket.get_download_url(
-            s3_key,
-            b2_content_disposition=f'attachment; filename="{secure_filename(filename)}"',
-            duration=timedelta(minutes=5)  # URL valid for 5 minutes
-        )
+        # 2. Generate a pre-signed download URL
+        download_url = bucket.get_download_url(s3_key)
+        
+        # 3. Add content disposition to force download
+        encoded_filename = requests.utils.quote(secure_filename(filename))
+        download_url_with_disposition = f"{download_url}?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
         
         return jsonify({
-            "download_url": download_url,
+            "download_url": download_url_with_disposition,
             "filename": secure_filename(filename)
         })
 

@@ -111,6 +111,7 @@ async function fetchFiles() {
 }
 
 // Function to download a file (UPDATED to handle authenticated downloads)
+// Function to download a file (UPDATED to handle authenticated downloads)
 async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
@@ -125,15 +126,16 @@ async function downloadFile(fileName) {
       throw new Error(data.error || "Failed to prepare download");
     }
 
-    // 2. Create a hidden iframe to trigger the download
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = data.download_url;
-    document.body.appendChild(iframe);
+    // 2. Create a temporary anchor element to trigger download
+    const a = document.createElement("a");
+    a.href = data.download_url;
+    a.download = data.filename;
+    document.body.appendChild(a);
+    a.click();
 
-    // 3. Clean up after download starts
+    // 3. Clean up
     setTimeout(() => {
-      document.body.removeChild(iframe);
+      document.body.removeChild(a);
       showToast("Download started!", "success");
     }, 3000);
   } catch (error) {
