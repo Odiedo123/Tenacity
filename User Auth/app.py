@@ -424,12 +424,12 @@ def redirect_to_home():
 def redirect_to_dashboard():
     return redirect(url_for('dashboard'))
 
-# -------- Download Files ---------------------------------------------------------- #
+# -------- Download Files ------------------------------------ #
 @app.route('/files/download/<filename>', methods=['GET'])
 @login_required
 def download_file(filename):
     try:
-        # 1. Verify file exists in database and get file_id
+        # 1. Verify file exists in database
         file_data = supabase.table('files') \
             .select('file_id, filename') \
             .eq('filename', secure_filename(filename)) \
@@ -442,15 +442,12 @@ def download_file(filename):
         file_id = file_data.data[0]['file_id']
         original_filename = file_data.data[0]['filename']
 
-        # 2. Generate authenticated download URL using file_id
-        download_url = b2_api.get_download_url_for_fileid(file_id)
+        # 2. Generate direct download URL with proper parameters
+        download_url = f"https://f005.backblazeb2.com/b2api/v3/b2_download_file_by_id?fileId={file_id}"
         
-        # 3. Add content disposition to force download
-        encoded_filename = requests.utils.quote(secure_filename(original_filename))
-        download_url_with_disposition = f"{download_url}?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
-        
+        # 3. Return both URL and filename for frontend to handle
         return jsonify({
-            "download_url": download_url_with_disposition,
+            "download_url": download_url,
             "filename": original_filename
         })
 

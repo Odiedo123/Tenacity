@@ -110,34 +110,49 @@ async function fetchFiles() {
   }
 }
 
-// Function to download a file (UPDATED to handle authenticated downloads)
-// Function to download a file (UPDATED to handle authenticated downloads)
+// Function to download a file (UPDATED to properly handle Backblaze B2 downloads)
 async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
 
     // 1. Get the authenticated download URL from Flask
     const response = await fetch(
-      `/files/download/${encodeURIComponent(fileName)}`
+      `/files/download/${encodeURIComponent(fileName)}`,
+      {
+        credentials: "include",
+      }
     );
-    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Failed to prepare download");
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to prepare download");
     }
 
-    // 2. Create a temporary anchor element to trigger download
-    const a = document.createElement("a");
-    a.href = data.download_url;
-    a.download = data.filename;
-    document.body.appendChild(a);
-    a.click();
+    const { download_url, filename } = await response.json();
 
-    // 3. Clean up
+    // 2. Create a temporary form to handle the download with headers
+    const form = document.createElement("form");
+    form.method = "GET";
+    form.action = download_url;
+    form.target = "_blank";
+
+    // Add content disposition as hidden input
+    const dispositionInput = document.createElement("input");
+    dispositionInput.type = "hidden";
+    dispositionInput.name = "response-content-disposition";
+    dispositionInput.value = `attachment; filename="${encodeURIComponent(
+      filename
+    )}"`;
+    form.appendChild(dispositionInput);
+
+    document.body.appendChild(form);
+    form.submit();
+
+    // 3. Clean up after a short delay
     setTimeout(() => {
-      document.body.removeChild(a);
+      document.body.removeChild(form);
       showToast("Download started!", "success");
-    }, 3000);
+    }, 1000);
   } catch (error) {
     console.error("Download error:", error);
     showToast(`Download failed: ${error.message}`, "error");
