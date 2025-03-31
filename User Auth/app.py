@@ -29,6 +29,7 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
     return response
 
 @app.before_request
@@ -246,24 +247,26 @@ def upload():
             s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
 
             try:
-                # Debugging: Print file details
-                print(f"Uploading file: {filename}, size: {len(file.read())} bytes")
-                file.seek(0)  # Reset file pointer after reading
-
-                # Upload file to Backblaze B2
-                bucket.upload_bytes(file.read(), s3_key)
-                uploaded_files.append(filename)
-
-                # Save file metadata to Supabase
+                # Read file contents
+                file_contents = file.read()
+                
+                # Upload file to Backblaze B2 and get file ID
+                uploaded_file = bucket.upload_bytes(file_contents, s3_key)
+                file_id = uploaded_file.id_
+                
+                # Save file metadata to Supabase (including file_id)
                 supabase.table('files').insert({
                     'filename': filename,
                     'filepath': s3_key,
+                    'file_id': file_id,
                     'user_id': session['user_id']
                 }).execute()
 
+                uploaded_files.append(filename)
+                file.seek(0)  # Reset file pointer for any additional processing
+
             except Exception as e:
-                # Debugging: Print the exception
-                print(f"Error uploading file: {e}")
+                app.logger.error(f"Upload error: {str(e)}")
                 return jsonify({"error": str(e)}), 500
 
         return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
@@ -305,7 +308,7 @@ def delete_file(filename):
     try:
         # 1. Get file metadata from Supabase
         file_data = supabase.table('files') \
-            .select('filepath') \
+            .select('filepath, file_id') \
             .eq('filename', secure_filename(filename)) \
             .eq('user_id', session['user_id']) \
             .execute()
@@ -314,14 +317,12 @@ def delete_file(filename):
             return jsonify({"error": "File not found"}), 404
 
         s3_key = file_data.data[0]['filepath']
+        file_id = file_data.data[0]['file_id']
 
-        # 2. Get file version info from Backblaze
-        file_info = bucket.get_file_info_by_name(s3_key)
-        
-        # 3. Delete from Backblaze (using both ID and name)
-        bucket.delete_file_version(file_info.id_, file_info.file_name)
+        # 2. Delete from Backblaze B2 using file ID
+        bucket.delete_file_version(file_id, s3_key)
 
-        # 4. Delete from Supabase
+        # 3. Delete from Supabase
         supabase.table('files') \
             .delete() \
             .eq('filename', filename) \
@@ -344,17 +345,23 @@ def edit_file(filename):
             safe_filename = secure_filename(filename)
             new_filename = secure_filename(new_filename)
 
-            # Get the S3 key for the file from Supabase
-            file_data = supabase.table('files').select('filepath').eq('filename', safe_filename).eq('user_id', session['user_id']).execute()
+            # Get the file data from Supabase
+            file_data = supabase.table('files') \
+                .select('filepath, file_id') \
+                .eq('filename', safe_filename) \
+                .eq('user_id', session['user_id']) \
+                .execute()
+            
             if not file_data.data:
                 return jsonify({"error": "File not found"}), 404
 
-            s3_key = file_data.data[0]['filepath']
+            old_s3_key = file_data.data[0]['filepath']
+            file_id = file_data.data[0]['file_id']
             new_s3_key = f"user_{session['user_id']}/{new_filename}"
 
-            # Rename the file in Backblaze B2
-            bucket.copy_file(s3_key, new_s3_key)
-            bucket.delete_file_version(s3_key)
+            # Rename the file in Backblaze B2 (copy + delete)
+            bucket.copy_file(old_s3_key, new_s3_key)
+            bucket.delete_file_version(file_id, old_s3_key)
 
             # Update the file metadata in Supabase
             supabase.table('files').update({
@@ -422,9 +429,9 @@ def redirect_to_dashboard():
 @login_required
 def download_file(filename):
     try:
-        # 1. Verify file exists in database
+        # 1. Verify file exists in database and get file_id
         file_data = supabase.table('files') \
-            .select('filepath') \
+            .select('file_id, filename') \
             .eq('filename', secure_filename(filename)) \
             .eq('user_id', session['user_id']) \
             .execute()
@@ -432,18 +439,19 @@ def download_file(filename):
         if not file_data.data:
             return jsonify({"error": "File not found"}), 404
 
-        s3_key = file_data.data[0]['filepath']
+        file_id = file_data.data[0]['file_id']
+        original_filename = file_data.data[0]['filename']
 
-        # 2. Generate a pre-signed download URL
-        download_url = bucket.get_download_url(s3_key)
+        # 2. Generate authenticated download URL using file_id
+        download_url = b2_api.get_download_url_for_fileid(file_id)
         
         # 3. Add content disposition to force download
-        encoded_filename = requests.utils.quote(secure_filename(filename))
+        encoded_filename = requests.utils.quote(secure_filename(original_filename))
         download_url_with_disposition = f"{download_url}?response-content-disposition=attachment%3Bfilename%3D{encoded_filename}"
         
         return jsonify({
             "download_url": download_url_with_disposition,
-            "filename": secure_filename(filename)
+            "filename": original_filename
         })
 
     except Exception as e:
