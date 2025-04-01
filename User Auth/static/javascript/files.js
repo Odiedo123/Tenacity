@@ -115,7 +115,7 @@ async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
 
-    // 1. Get the authenticated download URL from Flask
+    // Request the zip file from the server
     const response = await fetch(
       `/files/download/${encodeURIComponent(fileName)}`,
       {
@@ -124,21 +124,22 @@ async function downloadFile(fileName) {
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to prepare download");
+      throw new Error("Failed to download file");
     }
 
-    const { download_url, filename } = await response.json();
+    // Convert response into a Blob (binary data)
+    const blob = await response.blob();
 
-    // 2. Create an anchor element to trigger download
+    // Create a download link
     const link = document.createElement("a");
-    link.href = download_url;
-    link.download = filename;
-    link.style.display = "none"; // Hide the link
-
+    link.href = URL.createObjectURL(blob);
+    link.download = `${fileName}.zip`; // Ensure the file is downloaded as a zip
     document.body.appendChild(link);
-    link.click(); // Trigger the download
-    document.body.removeChild(link); // Cleanup
+    link.click();
+
+    // Cleanup
+    URL.revokeObjectURL(link.href);
+    document.body.removeChild(link);
 
     showToast("Download started!", "success");
   } catch (error) {
