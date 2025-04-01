@@ -1,6 +1,8 @@
-from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response
+from flask import Flask, request, send_from_directory, jsonify, render_template, redirect, url_for, session, Response, make_response, send_file
 import bcrypt
 import os
+import io
+import zipfile
 import requests
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -440,27 +442,36 @@ def download_file(filename):
             return jsonify({"error": "File not found"}), 404
 
         filepath = file_data.data[0]['filepath']
-        file_id = file_data.data[0]['file_id']
 
-        # 2. Generate a fresh authorization token (valid for 10 minutes)
-        auth_token = bucket.get_download_authorization(filepath, 600)  # 600 seconds = 10 minutes
-
-        # 3. Construct the download URL with the new token
-        download_url = (
-            f"https://f005.backblazeb2.com/file/"
-            f"tenacity-files/"  # Using bucket name
-            f"{filepath}"
-            f"?Authorization={auth_token}"
+        # 2. Fetch the actual file from Backblaze B2
+        auth_token = bucket.get_download_authorization(filepath, 600)
+        file_url = (
+            f"https://f005.backblazeb2.com/file/tenacity-files/"
+            f"{filepath}?Authorization={auth_token}"
         )
 
-        return jsonify({
-            "download_url": download_url,
-            "filename": secure_filename(filename)
-        })
+        response = requests.get(file_url)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch file"}), 500
 
+        # 3. Create an in-memory ZIP file
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            zip_file.writestr(filename, response.content)
+        
+        zip_buffer.seek(0)
+        
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=f"{filename}.zip",
+            mimetype="application/zip"
+        )
+    
     except Exception as e:
         app.logger.error(f"Download failed: {str(e)}")
         return jsonify({"error": "Download failed", "details": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
