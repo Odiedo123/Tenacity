@@ -110,7 +110,7 @@ async function fetchFiles() {
   }
 }
 
-// Function to download a file (UPDATED: safer method without iframe)
+// Function to download a file
 async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
