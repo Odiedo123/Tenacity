@@ -110,7 +110,7 @@ async function fetchFiles() {
   }
 }
 
-// Function to download a file (UPDATED to properly handle Backblaze B2 downloads)
+// Function to download a file (UPDATED: safer method without iframe)
 async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
@@ -130,29 +130,17 @@ async function downloadFile(fileName) {
 
     const { download_url, filename } = await response.json();
 
-    // 2. Create a temporary form to handle the download with headers
-    const form = document.createElement("form");
-    form.method = "GET";
-    form.action = download_url;
-    form.target = "_blank";
+    // 2. Create an anchor element to trigger download
+    const link = document.createElement("a");
+    link.href = download_url;
+    link.download = filename;
+    link.style.display = "none"; // Hide the link
 
-    // Add content disposition as hidden input
-    const dispositionInput = document.createElement("input");
-    dispositionInput.type = "hidden";
-    dispositionInput.name = "response-content-disposition";
-    dispositionInput.value = `attachment; filename="${encodeURIComponent(
-      filename
-    )}"`;
-    form.appendChild(dispositionInput);
+    document.body.appendChild(link);
+    link.click(); // Trigger the download
+    document.body.removeChild(link); // Cleanup
 
-    document.body.appendChild(form);
-    form.submit();
-
-    // 3. Clean up after a short delay
-    setTimeout(() => {
-      document.body.removeChild(form);
-      showToast("Download started!", "success");
-    }, 1000);
+    showToast("Download started!", "success");
   } catch (error) {
     console.error("Download error:", error);
     showToast(`Download failed: ${error.message}`, "error");

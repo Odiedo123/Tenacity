@@ -431,7 +431,7 @@ def download_file(filename):
     try:
         # 1. Verify file exists in database
         file_data = supabase.table('files') \
-            .select('file_id, filename') \
+            .select('filepath, file_id') \
             .eq('filename', secure_filename(filename)) \
             .eq('user_id', session['user_id']) \
             .execute()
@@ -439,16 +439,23 @@ def download_file(filename):
         if not file_data.data:
             return jsonify({"error": "File not found"}), 404
 
+        filepath = file_data.data[0]['filepath']
         file_id = file_data.data[0]['file_id']
-        original_filename = file_data.data[0]['filename']
 
-        # 2. Generate direct download URL with proper parameters
-        download_url = f"https://f005.backblazeb2.com/b2api/v3/b2_download_file_by_id?fileId={file_id}"
-        
-        # 3. Return both URL and filename for frontend to handle
+        # 2. Generate a fresh authorization token (valid for 10 minutes)
+        auth_token = bucket.get_download_authorization(filepath, 600)  # 600 seconds = 10 minutes
+
+        # 3. Construct the download URL with the new token
+        download_url = (
+            f"https://f005.backblazeb2.com/file/"
+            f"tenacity-files/"  # Using bucket name
+            f"{filepath}"
+            f"?Authorization={auth_token}"
+        )
+
         return jsonify({
             "download_url": download_url,
-            "filename": original_filename
+            "filename": secure_filename(filename)
         })
 
     except Exception as e:
