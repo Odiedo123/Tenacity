@@ -4,6 +4,7 @@ import os
 import io
 import zipfile
 import requests
+from flask_compress import Compress
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -15,6 +16,7 @@ from b2sdk.v2 import B2Api, InMemoryAccountInfo
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
+Compress(app) 
 
 csp = {
     'default-src': ["'self'"],  # Keep default security
@@ -54,6 +56,8 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    response.headers["Cache-Control"] = "public, max-age=31536000"
+    response.headers["Expires"] = (datetime.utcnow() + timedelta(days=365)).strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin' 
