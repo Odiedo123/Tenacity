@@ -18,16 +18,15 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY')
 
 csp = {
     'default-src': ["'self'"],  # Keep default security
-    'script-src': ["'self'", "'unsafe-inline'"],  # Allow inline scripts
-    'style-src': ["'self'", "'unsafe-inline'"],  # Allow inline styles
+    'script-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline scripts
+    'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline styles
     'img-src': ["'self'", "data:", "*.backblazeb2.com"],  # Allow images from Backblaze
     'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com"],  # Allow API calls (uploads)
+    'font-src': ["'self'", "https://fonts.gstatic.com"],
     'frame-ancestors': ["'none'"]  # Prevent iframe embedding
 }
 
-
 Talisman(app, content_security_policy=csp, force_https=True, strict_transport_security=True, frame_options='DENY')
-
 
 # -------- Setting up limiter to avoid overloading--------------------------------------- #
 limiter = Limiter(
