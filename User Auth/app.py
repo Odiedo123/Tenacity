@@ -4,6 +4,9 @@ import os
 import io
 import zipfile
 import requests
+from flask_talisman import Talisman
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from functools import wraps
@@ -12,6 +15,26 @@ from b2sdk.v2 import B2Api, InMemoryAccountInfo
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
+
+csp = {
+    'default-src': ["'self'"],  # Keep default security
+    'script-src': ["'self'", "'unsafe-inline'"],  # Allow inline scripts
+    'style-src': ["'self'", "'unsafe-inline'"],  # Allow inline styles
+    'img-src': ["'self'", "data:", "*.backblazeb2.com"],  # Allow images from Backblaze
+    'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com"],  # Allow API calls (uploads)
+    'frame-ancestors': ["'none'"]  # Prevent iframe embedding
+}
+
+
+Talisman(app, content_security_policy=csp, force_https=True, strict_transport_security=True, frame_options='DENY')
+
+
+# -------- Setting up limiter to avoid overloading--------------------------------------- #
+limiter = Limiter(
+    key_func=lambda: session.get("user_id", get_remote_address()),  # Use user_id if logged in, else IP
+    app=app,
+    default_limits=["100 per minute"]  # Global limit
+)
 
 # Initialize Supabase client
 supabase_url = os.getenv('SUPABASE_URL')
@@ -32,6 +55,9 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin' 
     return response
 
 @app.before_request
@@ -61,6 +87,7 @@ def robots():
 
 # -------- Signup ---------------------------------------------------------- #
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute") 
 def register():
     if request.method == 'POST':
         email = request.form['email']
@@ -95,6 +122,7 @@ def login_required(f):
     return decorated_function
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute") 
 def login():
     if request.method == 'POST':
         email = request.form['email']
@@ -235,6 +263,7 @@ def files():
 
 # -------- Upload ---------------------------------------------------------- #
 @app.route('/upload', methods=['GET', 'POST'])
+@limiter.limit("10 per minute") 
 @login_required
 def upload():
     if 'user_id' not in session:
@@ -434,6 +463,7 @@ def redirect_to_dashboard():
 
 # -------- Download Files ------------------------------------ #
 @app.route('/files/download/<filename>', methods=['GET'])
+@limiter.limit("5 per minute") 
 @login_required
 def download_file(filename):
     try:

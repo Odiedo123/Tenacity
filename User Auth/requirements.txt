@@ -15,11 +15,14 @@ botocore==1.36.26
 certifi==2025.1.31
 charset-normalizer==3.4.1
 click==8.1.7
+Deprecated==1.2.18
 deprecation==2.1.0
 docutils==0.21.2
 evdev==1.7.1
 Flask==3.0.3
+Flask-Limiter==3.12
 Flask-Sitemap==0.4.0
+flask-talisman==1.1.0
 frozenlist==1.5.0
 gotrue==2.12.0
 gunicorn==23.0.0
@@ -34,10 +37,14 @@ iniconfig==2.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.4
 jmespath==1.0.1
+limits==4.4.1
 logfury==1.0.1
+markdown-it-py==3.0.0
 MarkupSafe==3.0.2
+mdurl==0.1.2
 multidict==6.2.0
 mysql-connector-python==9.1.0
+ordered-set==4.1.0
 packaging==24.2
 phx-class-registry==4.1.0
 platformdirs==4.3.7
@@ -47,6 +54,7 @@ propcache==0.3.1
 psycopg2-binary==2.9.10
 pydantic==2.11.0
 pydantic_core==2.33.0
+Pygments==2.19.1
 PyJWT==2.10.1
 pynput==1.7.7
 pytest==8.3.5
@@ -56,6 +64,7 @@ python-dotenv==1.0.1
 python-xlib==0.33
 realtime==2.4.2
 requests==2.32.3
+rich==13.9.4
 rst2ansi==0.1.5
 s3transfer==0.11.2
 six==1.16.0
@@ -72,4 +81,5 @@ typing_extensions==4.12.2
 urllib3==2.3.0
 websockets==14.2
 Werkzeug==3.1.2
+wrapt==1.17.2
 yarl==1.18.3
