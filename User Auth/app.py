@@ -56,8 +56,6 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
-    response.headers["Cache-Control"] = "public, max-age=31536000"
-    response.headers["Expires"] = (datetime.utcnow() + timedelta(days=365)).strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin' 
