@@ -20,12 +20,13 @@ Compress(app)
 
 csp = {
     'default-src': ["'self'"],  # Keep default security
-    'script-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline scripts
+    'script-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://demo.arcade.software"],  # Allow inline scripts
     'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline styles
     'img-src': ["'self'", "data:", "*.backblazeb2.com"],  # Allow images from Backblaze
     'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com"],  # Allow API calls (uploads)
     'font-src': ["'self'", "https://fonts.gstatic.com"],
-    'frame-ancestors': ["'self'", "https://demo.arcade.software"]
+    'frame-ancestors': ["'self'", "https://demo.arcade.software"],
+    'frame-src': ["https://demo.arcade.software"],
 }
 
 Talisman(app, content_security_policy=csp, force_https=True, strict_transport_security=True, frame_options='DENY')
