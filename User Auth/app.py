@@ -25,7 +25,7 @@ csp = {
     'img-src': ["'self'", "data:", "*.backblazeb2.com"],  # Allow images from Backblaze
     'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com"],  # Allow API calls (uploads)
     'font-src': ["'self'", "https://fonts.gstatic.com"],
-    'frame-ancestors': ["'none'"]  # Prevent iframe embedding
+    'frame-ancestors': ["'self'", "https://demo.arcade.software"]
 }
 
 Talisman(app, content_security_policy=csp, force_https=True, strict_transport_security=True, frame_options='DENY')
@@ -51,7 +51,7 @@ bucket = b2_api.get_bucket_by_name(os.getenv('B2_BUCKET_NAME'))
 # -------- Allow CORS policy--------------------------------------- #
 @app.after_request
 def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'https://www.tenacity.ct.ws'
+    response.headers['Access-Control-Allow-Origin'] = 'https://www.tenacity.ct.ws, https://demo.arcade.software'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
