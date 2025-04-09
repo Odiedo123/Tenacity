@@ -320,7 +320,7 @@ span {
 
 #demo {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   width: 100vw;
   height: 50vh;
   margin-top: 15vh;
