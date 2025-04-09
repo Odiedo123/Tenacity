@@ -4,7 +4,7 @@ body {
   flex-direction: column;
   align-items: center;
   margin: 0;
-  height: 400vh;
+  height: 410vh;
   overflow: visible;
   overflow-y: auto;
   background-color: #d1f7e0;
@@ -318,6 +318,18 @@ span {
   background-color: #f57c04;
 }
 
+iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color-scheme: light;
+  margin-top: 15vh;
+  border-radius: 0px;
+  margin-bottom: 10vh;
+}
+
 #third-section {
   display: flex;
   flex-direction: row;
@@ -325,7 +337,7 @@ span {
   align-items: center;
   width: 100%;
   height: 60vh;
-  margin-top: 20vh;
+  margin-top: 25vh;
 }
 
 #third-section img {
