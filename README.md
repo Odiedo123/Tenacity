@@ -37,11 +37,11 @@ git clone https://github.com/Odiedo123/Tenacity.git
 flask run
 ```
 
-3. Access the app at `http://127.0.0.1:5000`
+3. Access the app at `https://www.tenacity.ct.ws`
 
 ## 🌐 **Live Demo**
 
-Check out the live version: (https://www.tenacity.ct.ws/)
+Check out the live version: (https://app.arcade.software/share/U1IhFrdvOVQUdHQM26OA)
 
 ## 👤 **User Authentication**
 
