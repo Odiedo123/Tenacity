@@ -35,78 +35,62 @@ function toggleFilePrompt() {
 async function fetchFiles() {
   try {
     const response = await fetch("/files/list");
+    if (!response.ok) throw new Error("Failed to load files.");
     const data = await response.json();
 
-    if (response.ok) {
-      const fileTableBody = document.querySelector("#file-list tbody");
-      fileTableBody.innerHTML = ""; // Clear the current table body
+    const fileTableBody = document.querySelector("#file-list tbody");
+    const sortBy = document.getElementById("sort-options").value;
+    const fragment = document.createDocumentFragment(); // Optimize DOM updates
+    const displayedFiles = new Set(); // Track duplicates
 
-      // Use a Set to track already displayed files (optional safeguard)
-      const displayedFiles = new Set();
+    // Pre-compile static elements (e.g., action icons) to avoid repeated work
+    const createActionIcons = (fileName) => {
+      const actionCell = document.createElement("td");
 
-      // Loop through each file and create a table row
-      data.files.forEach((file) => {
-        if (displayedFiles.has(file.name)) return; // Skip duplicates
-        displayedFiles.add(file.name);
+      // Download icon
+      const downloadIcon = new Image(); // Faster than createElement("img")
+      downloadIcon.src = "/static/icons/download.png";
+      downloadIcon.alt = "Download";
+      downloadIcon.classList.add("action-icon");
+      downloadIcon.onclick = () => downloadFile(fileName);
+      actionCell.appendChild(downloadIcon);
 
-        const row = document.createElement("tr");
+      // Delete icon
+      const deleteIcon = new Image();
+      deleteIcon.src = "/static/icons/delete.png";
+      deleteIcon.alt = "Delete";
+      deleteIcon.classList.add("action-icon");
+      deleteIcon.onclick = () => deleteFile(fileName);
+      actionCell.appendChild(deleteIcon);
 
-        // File name column
-        const nameCell = document.createElement("td");
-        nameCell.textContent = file.name;
+      return actionCell;
+    };
 
-        // File size column
-        const sizeCell = document.createElement("td");
-        sizeCell.textContent = formatFileSize(file.size);
+    // Batch process files (avoid reflows/repaints)
+    for (const file of data.files) {
+      if (displayedFiles.has(file.name)) continue;
+      displayedFiles.add(file.name);
 
-        // File type column
-        const typeCell = document.createElement("td");
-        typeCell.textContent = file.type;
-
-        // Last modified column
-        const modifiedCell = document.createElement("td");
-        modifiedCell.textContent = file.last_modified;
-
-        // Action column (Download, Delete)
-        const actionCell = document.createElement("td");
-
-        // Download icon
-        const downloadIcon = document.createElement("img");
-        downloadIcon.src = "/static/icons/download.png";
-        downloadIcon.alt = "Download";
-        downloadIcon.classList.add("action-icon");
-        downloadIcon.onclick = () => downloadFile(file.name);
-        actionCell.appendChild(downloadIcon);
-
-        // Delete icon
-        const deleteIcon = document.createElement("img");
-        deleteIcon.src = "/static/icons/delete.png";
-        deleteIcon.alt = "Delete";
-        deleteIcon.classList.add("action-icon");
-        deleteIcon.onclick = () => deleteFile(file.name);
-        actionCell.appendChild(deleteIcon);
-
-        // Append all columns to the row
-        row.appendChild(nameCell);
-        row.appendChild(sizeCell);
-        row.appendChild(typeCell);
-        row.appendChild(modifiedCell);
-        row.appendChild(actionCell);
-
-        // Add the row to the table
-        fileTableBody.appendChild(row);
-      });
-
-      // Reapply the current sorting criteria
-      const currentSortBy = document.getElementById("sort-options").value;
-      sortFiles(currentSortBy);
-
-      toggleFilePrompt();
-    } else {
-      showToast("Failed to load files.");
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${file.name}</td>
+        <td>${formatFileSize(file.size)}</td>
+        <td>${file.type}</td>
+        <td>${file.last_modified}</td>
+      `;
+      row.appendChild(createActionIcons(file.name));
+      fragment.appendChild(row);
     }
+
+    // Single DOM update (reduces layout thrashing)
+    fileTableBody.innerHTML = "";
+    fileTableBody.appendChild(fragment);
+
+    // Apply sorting (avoid redundant sorts if possible)
+    sortFiles(sortBy);
+    toggleFilePrompt();
   } catch (error) {
-    showToast("Error fetching files: " + error);
+    showToast("Error fetching files: " + error.message);
   }
 }
 

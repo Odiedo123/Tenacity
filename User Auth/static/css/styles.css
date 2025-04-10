@@ -4,7 +4,7 @@ body {
   flex-direction: column;
   align-items: center;
   margin: 0;
-  height: 415vh;
+  height: 300vh;
   overflow: visible;
   overflow-y: auto;
   background-color: #d1f7e0;
@@ -316,26 +316,6 @@ span {
 #second-section div button:hover {
   transform: translateX(10px);
   background-color: #f57c04;
-}
-
-#demo {
-  display: flex;
-  flex-direction: row;
-  width: 100vw;
-  height: 50vh;
-  margin-top: 15vh;
-  border: 3px solid red;
-}
-
-iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  color-scheme: light;
-  border-radius: 0px;
-  margin-bottom: 20vh;
 }
 
 #third-section {
