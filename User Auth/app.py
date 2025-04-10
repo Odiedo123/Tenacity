@@ -313,30 +313,75 @@ def upload():
     return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
+
 @app.route('/files/list', methods=['GET'])
 @login_required
 def list_files():
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    files_data = supabase.table('files').select('filename, filepath').eq('user_id', session['user_id']).execute()
-    files = files_data.data if files_data.data else []
+    # 1. Fetch file list from Supabase
+    supabase_files = supabase.table('files').select(
+        'filename, filepath'
+    ).eq('user_id', session['user_id']).execute().data
 
+    if not supabase_files:
+        return jsonify({"files": []})
+
+    # 2. Prepare batch request for Backblaze
+    b2 = B2Api()
+    bucket = b2.get_bucket_by_name("your-bucket-name")
+    auth_token = b2.account_info.get_account_auth_token()
+
+    batch_url = f"{b2.api_url}/b2api/v2/batch"
+    headers = {
+        "Authorization": auth_token,
+        "Content-Type": "multipart/mixed; boundary=my_boundary"
+    }
+
+    # 3. Build multipart payload
+    boundary = "my_boundary"
+    parts = []
+    for idx, file in enumerate(supabase_files, start=1):
+        part = (
+            f"--{boundary}\n"
+            f"Content-Type: application/json\n"
+            f"Content-ID: {idx}\n\n"
+            f'{{"fileName": "{file["filepath"]}"}}\n'
+        )
+        parts.append(part.encode('utf-8'))
+    parts.append(f"--{boundary}--\n".encode('utf-8'))
+
+    payload = b"\n".join(parts)
+
+    # 4. Send batch request
+    response = requests.post(batch_url, headers=headers, data=payload)
+    if not response.ok:
+        return jsonify({"error": "Backblaze batch failed"}), 500
+
+    # 5. Parse multipart response
+    from email.parser import BytesParser
+    parser = BytesParser()
+    msg = parser.parsebytes(response.content, headersonly=False)
+    batch_results = []
+    for part in msg.get_payload():
+        if part.get_content_type() == 'application/json':
+            batch_results.append(part.get_payload())
+
+    # 6. Map results to Supabase files
     file_list = []
-    for file in files:
-        try:
-            # Get file metadata from Backblaze B2
-            file_info = bucket.get_file_info_by_name(file['filepath'])
-            last_modified_timestamp = file_info.upload_timestamp / 1000  # Convert to seconds
-            last_modified_readable = datetime.fromtimestamp(last_modified_timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            file_list.append({
-                "name": file['filename'],
-                "size": file_info.content_length,
-                "type": file['filename'].split('.')[-1],
-                "last_modified": last_modified_readable
-            })
-        except Exception as e:
-            continue  # Skip files that can't be accessed
+    for supabase_file, result in zip(supabase_files, batch_results):
+        if 'fileId' not in result:
+            continue  # Skip failed entries
+        file_info = {
+            "name": supabase_file['filename'],
+            "size": result['contentLength'],
+            "type": supabase_file['filename'].split('.')[-1],
+            "last_modified": datetime.fromtimestamp(
+                result['uploadTimestamp'] / 1000
+            ).strftime('%Y-%m-%d %H:%M:%S')
+        }
+        file_list.append(file_info)
 
     return jsonify({"files": file_list})
 
