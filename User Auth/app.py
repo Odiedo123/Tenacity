@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from supabase import create_client, Client
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
+from email.parser import BytesParser  # <-- Missing import added
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
@@ -313,77 +314,77 @@ def upload():
     return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
-
 @app.route('/files/list', methods=['GET'])
 @login_required
 def list_files():
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    # 1. Fetch file list from Supabase
-    supabase_files = supabase.table('files').select(
-        'filename, filepath'
-    ).eq('user_id', session['user_id']).execute().data
-
-    if not supabase_files:
-        return jsonify({"files": []})
-
-    # 2. Prepare batch request for Backblaze
-    b2 = B2Api()
-    bucket = b2.get_bucket_by_name("your-bucket-name")
-    auth_token = b2.account_info.get_account_auth_token()
-
-    batch_url = f"{b2.api_url}/b2api/v2/batch"
-    headers = {
-        "Authorization": auth_token,
-        "Content-Type": "multipart/mixed; boundary=my_boundary"
-    }
-
-    # 3. Build multipart payload
-    boundary = "my_boundary"
-    parts = []
-    for idx, file in enumerate(supabase_files, start=1):
-        part = (
-            f"--{boundary}\n"
-            f"Content-Type: application/json\n"
-            f"Content-ID: {idx}\n\n"
-            f'{{"fileName": "{file["filepath"]}"}}\n'
+    try:
+        # 1. Initialize Backblaze B2 with env vars
+        b2 = B2Api()
+        b2.authorize_account(
+            "production",
+            application_key_id=os.getenv("B2_KEY_ID"),
+            application_key=os.getenv("B2_APPLICATION_KEY")
         )
-        parts.append(part.encode('utf-8'))
-    parts.append(f"--{boundary}--\n".encode('utf-8'))
+        bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME", "tenacity-files"))
 
-    payload = b"\n".join(parts)
+        # 2. Fetch files from Supabase
+        supabase_files = supabase.table('files').select(
+            'filename, filepath'
+        ).eq('user_id', session['user_id']).execute().data
 
-    # 4. Send batch request
-    response = requests.post(batch_url, headers=headers, data=payload)
-    if not response.ok:
-        return jsonify({"error": "Backblaze batch failed"}), 500
+        if not supabase_files:
+            return jsonify({"files": []})  # Early return if no files
 
-    # 5. Parse multipart response
-    from email.parser import BytesParser
-    parser = BytesParser()
-    msg = parser.parsebytes(response.content, headersonly=False)
-    batch_results = []
-    for part in msg.get_payload():
-        if part.get_content_type() == 'application/json':
-            batch_results.append(part.get_payload())
+        # 3. Batch fetch metadata from Backblaze
+        auth_token = b2.account_info.get_account_auth_token()
+        batch_url = f"{b2.api_url}/b2api/v2/batch"
+        
+        # Build batch payload
+        boundary = "my_boundary"
+        parts = [
+            f"--{boundary}\nContent-Type: application/json\nContent-ID: {idx}\n\n{{\"fileName\": \"{file['filepath']}\"}}\n".encode()
+            for idx, file in enumerate(supabase_files, start=1)
+        ]
+        parts.append(f"--{boundary}--\n".encode())
+        
+        # Send batch request
+        response = requests.post(
+            batch_url,
+            headers={
+                "Authorization": auth_token,
+                "Content-Type": f"multipart/mixed; boundary={boundary}"
+            },
+            data=b"\n".join(parts)
+        )
+        response.raise_for_status()
 
-    # 6. Map results to Supabase files
-    file_list = []
-    for supabase_file, result in zip(supabase_files, batch_results):
-        if 'fileId' not in result:
-            continue  # Skip failed entries
-        file_info = {
-            "name": supabase_file['filename'],
-            "size": result['contentLength'],
-            "type": supabase_file['filename'].split('.')[-1],
-            "last_modified": datetime.fromtimestamp(
-                result['uploadTimestamp'] / 1000
-            ).strftime('%Y-%m-%d %H:%M:%S')
-        }
-        file_list.append(file_info)
+        # 4. Parse and format results
+        parser = BytesParser()
+        msg = parser.parsebytes(response.content, headersonly=False)
+        file_list = [
+            {
+                "name": file['filename'],
+                "size": result['contentLength'],
+                "type": file['filename'].split('.')[-1],
+                "last_modified": datetime.fromtimestamp(result['uploadTimestamp'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            for file, result in zip(
+                supabase_files,
+                [p.get_payload() for p in msg.get_payload() if p.get_content_type() == 'application/json']
+            )
+            if 'fileId' in result
+        ]
 
-    return jsonify({"files": file_list})
+        # 5. REQUIRED FINAL RETURN
+        return jsonify({"files": file_list})  # <-- Critical return statement
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Network error: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 # -------- Delete ---------------------------------------------------------- #
 @app.route('/files/delete/<filename>', methods=['DELETE'])
