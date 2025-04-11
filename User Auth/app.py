@@ -266,67 +266,72 @@ def files():
     return render_template('files.html', files=files)
 
 # -------- Upload ---------------------------------------------------------- #
-@app.route('/upload', methods=['GET', 'POST'])
-@limiter.limit("100 per minute")  # Increased limit
+@app.route('/upload', methods=['POST'])
+@limiter.limit("100 per minute")  # More uploads allowed
 @login_required
 def upload():
-    
+    # 🕵️‍♂️ Check if user is logged in
     if 'user_id' not in session:
-        return jsonify({"error": "Please log in"}), 401
+        return jsonify({"error": "Please log in first!"}), 401
 
-    if request.method == 'GET':
-        return render_template('upload.html')
-
+    # 📦 Get all the files from the request
     if 'files' not in request.files:
-        return jsonify({"error": "No files"}), 400
-
-    # 🏗️ Prepare all files at once
+        return jsonify({"error": "No files attached!"}), 400
+    
     files = [f for f in request.files.getlist('files') if f.filename]
     if not files:
-        return jsonify({"error": "No good files"}), 400
+        return jsonify({"error": "All files were empty!"}), 400
 
-    # 🚀 Turbo Boost Setup
-    b2 = B2Api()  # One-time Backblaze login
+    # 🏎️ Prepare Backblaze connection
+    b2 = B2Api()
     b2.authorize_account("production", os.getenv("B2_KEY_ID"), os.getenv("B2_APPLICATION_KEY"))
     bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME"))
 
-    # 📦 Package all file data together
-    def process_file(file):
+    # 🧩 Our magic uploader function
+    def upload_file(file):
         try:
             filename = secure_filename(file.filename)
             s3_key = f"user_{session['user_id']}/{filename}"
             file_contents = file.read()
+            file_size = len(file_contents)
             
-            # 🚛 Send to Backblaze
-            uploaded_file = bucket.upload_bytes(file_contents, s3_key)
+            # 🤖 Robot chooses best method automatically!
+            if file_size < 100_000_000:  # 100MB
+                # 🚀 FAST METHOD for small files
+                uploaded = bucket.upload_bytes(file_contents, s3_key)
+            else:
+                # 🐢 SAFE METHOD for big files
+                big_file = bucket.start_large_file(s3_key, "application/octet-stream")
+                big_file.upload_part(1, file_contents)
+                uploaded = big_file.finish()
             
-            # 📝 Save receipt (Supabase)
+            # 📝 Save receipt in Supabase
             supabase.table('files').insert({
                 'filename': filename,
                 'filepath': s3_key,
-                'file_id': uploaded_file.id_,
-                'user_id': session['user_id']
+                'file_id': uploaded.id_,
+                'user_id': session['user_id'],
+                'size': file_size
             }).execute()
             
-            return {"name": filename, "size": len(file_contents)}
+            return {"name": filename, "size": file_size, "status": "success"}
         except Exception as e:
-            return {"error": str(e)}
-
-    # 🎪 The Magic Circus Trick - Multiple workers!
-    if len(files) > 1:  # Only use threads for multiple files
-        with ThreadPoolExecutor(max_workers=5) as executor:  # 5 workers max
-            results = list(executor.map(process_file, files))
+            return {"name": file.filename, "status": "failed", "error": str(e)}
+    
+    # 🎪 The Magic Circus - Multiple workers for multiple files!
+    if len(files) > 1:
+        with ThreadPoolExecutor(max_workers=5) as executor:  # 5 uploads at once!
+            results = list(executor.map(upload_file, files))
     else:
-        results = [process_file(files[0])]  # Single file? No threads needed
+        results = [upload_file(files[0])]  # Single file? No need for threads
 
     # 🏁 Finish line!
-    success = [r for r in results if 'error' not in r]
+    success = [r for r in results if r['status'] == 'success']
     return jsonify({
-        "message": f"Uploaded {len(success)}/{len(files)} files",
-        "files": success,
-        "errors": [r for r in results if 'error' in r]
+        "message": f"Done! {len(success)}/{len(files)} files uploaded",
+        "successful_files": success,
+        "failed_files": [r for r in results if r['status'] != 'success']
     })
-
 
 # -------- File listing ----------------------------------------------------- #
 @app.route('/files/list', methods=['GET'])
