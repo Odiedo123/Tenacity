@@ -4,8 +4,7 @@ import os
 import io
 import zipfile
 import requests
-import asyncio
-import aiohttp
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from flask_compress import Compress
 from flask_talisman import Talisman
@@ -268,54 +267,96 @@ def files():
     return render_template('files.html', files=files)
 
 # -------- Upload ---------------------------------------------------------- #
+# Global thread-safe variables
+upload_lock = threading.Lock()
+upload_rsults = []
+
 @app.route('/upload', methods=['GET', 'POST'])
-@limiter.limit("10 per minute") 
+@limiter.limit("20 per minute")  # Rate limiting applies to both methods
 @login_required
 def upload():
     if 'user_id' not in session:
+        if request.method == 'POST':
+            return jsonify({"error": "Unauthorized"}), 401
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        if 'files' not in request.files:
+    # GET request - show upload form
+    if request.method == 'GET':
+        return render_template('upload.html',
+            max_file_size=app.config['MAX_CONTENT_LENGTH'],
+            allowed_extensions=['.jpg', '.png', '.pdf']  # Customize as needed
+        )
+
+    # POST request - handle file upload
+    if 'files' not in request.files:
+        if request.accept_mimetypes.accept_json:
             return jsonify({"error": "No files provided"}), 400
+        return render_template('upload.html', error="No files provided")
 
-        files = request.files.getlist('files')
-        uploaded_files = []
+    files = request.files.getlist('files')
+    if not files:
+        if request.accept_mimetypes.accept_json:
+            return jsonify({"error": "No files selected"}), 400
+        return render_template('upload.html', error="No files selected")
 
-        for file in files:
-            if file.filename == '':
-                continue  # Skip empty files
-
+    def process_file(file):
+        try:
             filename = secure_filename(file.filename)
-            s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
+            if not filename:
+                return None
 
-            try:
-                # Read file contents
-                file_contents = file.read()
-                
-                # Upload file to Backblaze B2 and get file ID
-                uploaded_file = bucket.upload_bytes(file_contents, s3_key)
-                file_id = uploaded_file.id_
-                
-                # Save file metadata to Supabase (including file_id)
+            s3_key = f"user_{session['user_id']}/{filename}"
+            file_contents = file.read()
+
+            # Upload to B2
+            uploaded_file = bucket.upload_bytes(file_contents, s3_key)
+            
+            # Store metadata
+            with upload_lock:
                 supabase.table('files').insert({
                     'filename': filename,
                     'filepath': s3_key,
-                    'file_id': file_id,
+                    'file_id': uploaded_file.id_,
                     'user_id': session['user_id']
                 }).execute()
 
-                uploaded_files.append(filename)
-                file.seek(0)  # Reset file pointer for any additional processing
+            return {
+                'name': filename,
+                'size': len(file_contents),
+                'url': f'/download/{filename}'
+            }
+        except Exception as e:
+            app.logger.error(f"Upload failed: {str(e)}")
+            return None
 
-            except Exception as e:
-                app.logger.error(f"Upload error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+    try:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(process_file, [f for f in files if f.filename]))
 
-        return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
+        successful_uploads = [r for r in results if r is not None]
+        failed_count = len(results) - len(successful_uploads)
 
-    return render_template('upload.html')
+        # JSON response for API calls
+        if request.accept_mimetypes.accept_json:
+            return jsonify({
+                "success": True,
+                "uploaded": len(successful_uploads),
+                "failed": failed_count,
+                "files": successful_uploads
+            })
 
+        # HTML response for form submissions
+        return render_template('upload_result.html',
+            success_count=len(successful_uploads),
+            failed_count=failed_count,
+            files=successful_uploads
+        )
+
+    except Exception as e:
+        app.logger.error(f"Upload system error: {str(e)}")
+        if request.accept_mimetypes.accept_json:
+            return jsonify({"error": "Internal server error"}), 500
+        return render_template('upload.html', error="Internal server error")
 # -------- File listing ----------------------------------------------------- #
 @app.route('/files/list', methods=['GET'])
 @login_required
