@@ -321,7 +321,7 @@ def list_files():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # 1. Initialize Backblaze B2 with env vars
+        # 1. Initialize Backblaze B2
         b2 = B2Api()
         b2.authorize_account(
             "production",
@@ -336,21 +336,22 @@ def list_files():
         ).eq('user_id', session['user_id']).execute().data
 
         if not supabase_files:
-            return jsonify({"files": []})  # Early return if no files
+            return jsonify({"files": []})
 
-        # 3. Batch fetch metadata from Backblaze
+        # 3. Prepare batch request
         auth_token = b2.account_info.get_account_auth_token()
-        batch_url = f"{b2.api_url}/b2api/v2/batch"
+        account_info = b2.account_info
+        batch_url = f"{account_info.get_api_url()}/b2api/v2/batch"  # Correct API URL
         
-        # Build batch payload
+        # Build multipart payload
         boundary = "my_boundary"
         parts = [
-            f"--{boundary}\nContent-Type: application/json\nContent-ID: {idx}\n\n{{\"fileName\": \"{file['filepath']}\"}}\n".encode()
+            f"--{boundary}\nContent-Type: application/json\nContent-ID: {idx}\n\n{{\"fileName\": \"{file['filepath']}\"}}\n".encode('utf-8')
             for idx, file in enumerate(supabase_files, start=1)
         ]
-        parts.append(f"--{boundary}--\n".encode())
-        
-        # Send batch request
+        parts.append(f"--{boundary}--\n".encode('utf-8'))
+
+        # 4. Send batch request
         response = requests.post(
             batch_url,
             headers={
@@ -361,29 +362,37 @@ def list_files():
         )
         response.raise_for_status()
 
-        # 4. Parse and format results
+        # 5. Parse response
         parser = BytesParser()
         msg = parser.parsebytes(response.content, headersonly=False)
-        file_list = [
-            {
-                "name": file['filename'],
-                "size": result['contentLength'],
-                "type": file['filename'].split('.')[-1],
-                "last_modified": datetime.fromtimestamp(result['uploadTimestamp'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-            }
-            for file, result in zip(
-                supabase_files,
-                [p.get_payload() for p in msg.get_payload() if p.get_content_type() == 'application/json']
-            )
-            if 'fileId' in result
+        batch_results = [
+            part.get_payload()
+            for part in msg.get_payload()
+            if part.get_content_type() == 'application/json'
         ]
 
-        # 5. REQUIRED FINAL RETURN
-        return jsonify({"files": file_list})  # <-- Critical return statement
+        # 6. Format response
+        file_list = []
+        for supabase_file, result in zip(supabase_files, batch_results):
+            if 'fileId' not in result:
+                continue  # Skip failed entries
+            
+            file_list.append({
+                "name": supabase_file['filename'],
+                "size": result['contentLength'],
+                "type": supabase_file['filename'].split('.')[-1],
+                "last_modified": datetime.fromtimestamp(
+                    result['uploadTimestamp'] / 1000
+                ).strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        return jsonify({"files": file_list})
 
     except requests.exceptions.RequestException as e:
+        app.logger.error(f"Backblaze API request failed: {str(e)}")
         return jsonify({"error": f"Network error: {str(e)}"}), 500
     except Exception as e:
+        app.logger.error(f"Unexpected error in /files/list: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 # -------- Delete ---------------------------------------------------------- #
