@@ -267,52 +267,66 @@ def files():
 
 # -------- Upload ---------------------------------------------------------- #
 @app.route('/upload', methods=['GET', 'POST'])
-@limiter.limit("10 per minute") 
+@limiter.limit("100 per minute")  # Increased limit
 @login_required
 def upload():
+    
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return jsonify({"error": "Please log in"}), 401
 
-    if request.method == 'POST':
-        if 'files' not in request.files:
-            return jsonify({"error": "No files provided"}), 400
+    if request.method == 'GET':
+        return render_template('upload.html')
 
-        files = request.files.getlist('files')
-        uploaded_files = []
+    if 'files' not in request.files:
+        return jsonify({"error": "No files"}), 400
 
-        for file in files:
-            if file.filename == '':
-                continue  # Skip empty files
+    # 🏗️ Prepare all files at once
+    files = [f for f in request.files.getlist('files') if f.filename]
+    if not files:
+        return jsonify({"error": "No good files"}), 400
 
+    # 🚀 Turbo Boost Setup
+    b2 = B2Api()  # One-time Backblaze login
+    b2.authorize_account("production", os.getenv("B2_KEY_ID"), os.getenv("B2_APPLICATION_KEY"))
+    bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME"))
+
+    # 📦 Package all file data together
+    def process_file(file):
+        try:
             filename = secure_filename(file.filename)
-            s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
+            s3_key = f"user_{session['user_id']}/{filename}"
+            file_contents = file.read()
+            
+            # 🚛 Send to Backblaze
+            uploaded_file = bucket.upload_bytes(file_contents, s3_key)
+            
+            # 📝 Save receipt (Supabase)
+            supabase.table('files').insert({
+                'filename': filename,
+                'filepath': s3_key,
+                'file_id': uploaded_file.id_,
+                'user_id': session['user_id']
+            }).execute()
+            
+            return {"name": filename, "size": len(file_contents)}
+        except Exception as e:
+            return {"error": str(e)}
 
-            try:
-                # Read file contents
-                file_contents = file.read()
-                
-                # Upload file to Backblaze B2 and get file ID
-                uploaded_file = bucket.upload_bytes(file_contents, s3_key)
-                file_id = uploaded_file.id_
-                
-                # Save file metadata to Supabase (including file_id)
-                supabase.table('files').insert({
-                    'filename': filename,
-                    'filepath': s3_key,
-                    'file_id': file_id,
-                    'user_id': session['user_id']
-                }).execute()
+    # 🎪 The Magic Circus Trick - Multiple workers!
+    if len(files) > 1:  # Only use threads for multiple files
+        with ThreadPoolExecutor(max_workers=5) as executor:  # 5 workers max
+            results = list(executor.map(process_file, files))
+    else:
+        results = [process_file(files[0])]  # Single file? No threads needed
 
-                uploaded_files.append(filename)
-                file.seek(0)  # Reset file pointer for any additional processing
+    # 🏁 Finish line!
+    success = [r for r in results if 'error' not in r]
+    return jsonify({
+        "message": f"Uploaded {len(success)}/{len(files)} files",
+        "files": success,
+        "errors": [r for r in results if 'error' in r]
+    })
 
-            except Exception as e:
-                app.logger.error(f"Upload error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
-
-        return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
-
-    return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
 @app.route('/files/list', methods=['GET'])
