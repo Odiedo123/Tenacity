@@ -317,31 +317,23 @@ def upload():
     return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
-async def fetch_file_info(bucket, filepath):
-    """Helper function to fetch file info with error handling"""
-    try:
-        return await bucket.get_file_info_by_name(filepath)
-    except Exception as e:
-        app.logger.error(f"Failed to fetch {filepath}: {str(e)}")
-        return None
-
 @app.route('/files/list', methods=['GET'])
 @login_required
-async def list_files():
+def list_files():
     if 'user_id' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
         # 1. Initialize Backblaze B2
         b2 = B2Api()
-        await b2.authorize_account(
+        b2.authorize_account(
             "production",
             application_key_id=os.getenv("B2_KEY_ID"),
             application_key=os.getenv("B2_APPLICATION_KEY")
         )
-        bucket = await b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME", "tenacity-files"))
+        bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME", "tenacity-files"))
 
-        # 2. Fetch files from Supabase (sync operation)
+        # 2. Fetch files from Supabase
         supabase_files = supabase.table('files').select(
             'filename, filepath'
         ).eq('user_id', session['user_id']).execute().data
@@ -349,20 +341,18 @@ async def list_files():
         if not supabase_files:
             return jsonify({"files": []})
 
-        # 3. Create async tasks for all files
-        tasks = [
-            fetch_file_info(bucket, file['filepath'])
-            for file in supabase_files
-        ]
+        # 3. Process files in parallel
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            file_infos = list(executor.map(
+                lambda f: bucket.get_file_info_by_name(f['filepath']),
+                supabase_files
+            ))
 
-        # 4. Run all requests concurrently
-        file_infos = await asyncio.gather(*tasks)
-
-        # 5. Process results
+        # 4. Format response
         file_list = []
         for file, info in zip(supabase_files, file_infos):
             if not info:
-                continue  # Skip failed files
+                continue
             
             file_list.append({
                 "name": file['filename'],
@@ -376,8 +366,9 @@ async def list_files():
         return jsonify({"files": file_list})
 
     except Exception as e:
-        app.logger.error(f"Error in /files/list: {str(e)}", exc_info=True)
+        app.logger.error(f"Error in /files/list: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
 # -------- Delete ---------------------------------------------------------- #
 @app.route('/files/delete/<filename>', methods=['DELETE'])
 @login_required
