@@ -4,6 +4,9 @@ import os
 import io
 import zipfile
 import requests
+import asyncio
+import aiohttp
+from concurrent.futures import ThreadPoolExecutor
 from flask_compress import Compress
 from flask_talisman import Talisman
 from flask_limiter import Limiter
@@ -338,63 +341,39 @@ def list_files():
         if not supabase_files:
             return jsonify({"files": []})
 
-        # 3. Prepare batch request
-        auth_token = b2.account_info.get_account_auth_token()
-        account_info = b2.account_info
-        batch_url = f"{account_info.get_api_url()}/b2api/v2/batch"  # Correct API URL
-        
-        # Build multipart payload
-        boundary = "my_boundary"
-        parts = [
-            f"--{boundary}\nContent-Type: application/json\nContent-ID: {idx}\n\n{{\"fileName\": \"{file['filepath']}\"}}\n".encode('utf-8')
-            for idx, file in enumerate(supabase_files, start=1)
-        ]
-        parts.append(f"--{boundary}--\n".encode('utf-8'))
+        # 3. Fetch metadata in parallel
+        def get_file_info(filepath):
+            try:
+                return bucket.get_file_info_by_name(filepath)
+            except Exception:
+                return None
 
-        # 4. Send batch request
-        response = requests.post(
-            batch_url,
-            headers={
-                "Authorization": auth_token,
-                "Content-Type": f"multipart/mixed; boundary={boundary}"
-            },
-            data=b"\n".join(parts)
-        )
-        response.raise_for_status()
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            file_infos = list(executor.map(
+                lambda f: get_file_info(f['filepath']),
+                supabase_files
+            ))
 
-        # 5. Parse response
-        parser = BytesParser()
-        msg = parser.parsebytes(response.content, headersonly=False)
-        batch_results = [
-            part.get_payload()
-            for part in msg.get_payload()
-            if part.get_content_type() == 'application/json'
-        ]
-
-        # 6. Format response
+        # 4. Format results
         file_list = []
-        for supabase_file, result in zip(supabase_files, batch_results):
-            if 'fileId' not in result:
-                continue  # Skip failed entries
+        for file, info in zip(supabase_files, file_infos):
+            if not info:
+                continue
             
             file_list.append({
-                "name": supabase_file['filename'],
-                "size": result['contentLength'],
-                "type": supabase_file['filename'].split('.')[-1],
+                "name": file['filename'],
+                "size": info.content_length,
+                "type": file['filename'].split('.')[-1],
                 "last_modified": datetime.fromtimestamp(
-                    result['uploadTimestamp'] / 1000
+                    info.upload_timestamp / 1000
                 ).strftime('%Y-%m-%d %H:%M:%S')
             })
 
         return jsonify({"files": file_list})
 
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Backblaze API request failed: {str(e)}")
-        return jsonify({"error": f"Network error: {str(e)}"}), 500
     except Exception as e:
-        app.logger.error(f"Unexpected error in /files/list: {str(e)}")
+        app.logger.error(f"Error in /files/list: {str(e)}")
         return jsonify({"error": f"Server error: {str(e)}"}), 500
-
 # -------- Delete ---------------------------------------------------------- #
 @app.route('/files/delete/<filename>', methods=['DELETE'])
 @login_required
