@@ -57,6 +57,13 @@ span {
   text-align: center;
 }
 
+.fixed-badge {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
 .log-in {
   position: relative;
   background-color: white;
