@@ -267,71 +267,52 @@ def files():
 
 # -------- Upload ---------------------------------------------------------- #
 @app.route('/upload', methods=['GET', 'POST'])
-@limiter.limit("100 per minute")
+@limiter.limit("10 per minute") 
 @login_required
 def upload():
-    if request.method == 'GET':
-        return render_template('upload.html')
-    
     if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+        return redirect(url_for('login'))
 
-    if 'files' not in request.files:
-        return jsonify({"error": "No files provided"}), 400
+    if request.method == 'POST':
+        if 'files' not in request.files:
+            return jsonify({"error": "No files provided"}), 400
 
-    files = [f for f in request.files.getlist('files') if f.filename]
-    if not files:
-        return jsonify({"error": "No valid files provided"}), 400
+        files = request.files.getlist('files')
+        uploaded_files = []
 
-    # Initialize B2 connection
-    b2 = B2Api()
-    b2.authorize_account("production", os.getenv("B2_KEY_ID"), os.getenv("B2_APPLICATION_KEY"))
-    bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME"))
+        for file in files:
+            if file.filename == '':
+                continue  # Skip empty files
 
-    def process_file(file):
-        try:
             filename = secure_filename(file.filename)
-            s3_key = f"user_{session['user_id']}/{filename}"
-            file_contents = file.read()
-            file_size = len(file_contents)
+            s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
 
-            # Choose upload method based on size
-            if file_size < 100 * 1024 * 1024:  # 100MB threshold
-                uploaded = bucket.upload_bytes(file_contents, s3_key)
-            else:
-                # Large file chunked upload
-                large_file = bucket.start_large_file(s3_key, "application/octet-stream")
-                large_file.upload_part(1, file_contents)
-                uploaded = large_file.finish()
+            try:
+                # Read file contents
+                file_contents = file.read()
+                
+                # Upload file to Backblaze B2 and get file ID
+                uploaded_file = bucket.upload_bytes(file_contents, s3_key)
+                file_id = uploaded_file.id_
+                
+                # Save file metadata to Supabase (including file_id)
+                supabase.table('files').insert({
+                    'filename': filename,
+                    'filepath': s3_key,
+                    'file_id': file_id,
+                    'user_id': session['user_id']
+                }).execute()
 
-            # Store metadata
-            supabase.table('files').insert({
-                'filename': filename,
-                'filepath': s3_key,
-                'file_id': uploaded.id_,
-                'user_id': session['user_id'],
-                'size': file_size
-            }).execute()
+                uploaded_files.append(filename)
+                file.seek(0)  # Reset file pointer for any additional processing
 
-            return {'name': filename, 'size': file_size, 'status': 'success'}
-        except Exception as e:
-            return {'name': file.filename, 'status': 'failed', 'error': str(e)}
+            except Exception as e:
+                app.logger.error(f"Upload error: {str(e)}")
+                return jsonify({"error": str(e)}), 500
 
-    # Parallel processing for multiple files
-    if len(files) > 1:
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            results = list(executor.map(process_file, files))
-    else:
-        results = [process_file(files[0])]
+        return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
 
-    successful_uploads = [r for r in results if r['status'] == 'success']
-    return jsonify({
-        'success': True,
-        'uploaded': len(successful_uploads),
-        'failed': len(results) - len(successful_uploads),
-        'files': successful_uploads,
-        'errors': [r for r in results if r['status'] != 'success']
-    })
+    return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
 @app.route('/files/list', methods=['GET'])
