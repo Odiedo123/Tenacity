@@ -4,6 +4,7 @@ import os
 import io
 import zipfile
 import requests
+import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 from flask_compress import Compress
 from flask_talisman import Talisman
@@ -267,7 +268,7 @@ def files():
 
 # -------- Upload ---------------------------------------------------------- #
 @app.route('/upload', methods=['GET', 'POST'])
-@limiter.limit("10 per minute") 
+@limiter.limit("10 per minute")
 @login_required
 def upload():
     if 'user_id' not in session:
@@ -278,39 +279,56 @@ def upload():
             return jsonify({"error": "No files provided"}), 400
 
         files = request.files.getlist('files')
-        uploaded_files = []
+        upload_results = []  # List of metadata dicts for files
+        errors = []
+        user_id = session['user_id']
 
-        for file in files:
+        # Function to process each file
+        def process_file(file):
             if file.filename == '':
-                continue  # Skip empty files
-
+                return None  # Skip empty files
             filename = secure_filename(file.filename)
-            s3_key = f"user_{session['user_id']}/{filename}"  # Store files in user-specific folders
-
+            s3_key = f"user_{user_id}/{filename}"
             try:
-                # Read file contents
+                # Read file contents in full (consider streaming for very large files)
                 file_contents = file.read()
-                
-                # Upload file to Backblaze B2 and get file ID
+                # Upload to Backblaze B2
                 uploaded_file = bucket.upload_bytes(file_contents, s3_key)
                 file_id = uploaded_file.id_
-                
-                # Save file metadata to Supabase (including file_id)
-                supabase.table('files').insert({
+                return {
                     'filename': filename,
                     'filepath': s3_key,
                     'file_id': file_id,
-                    'user_id': session['user_id']
-                }).execute()
-
-                uploaded_files.append(filename)
-                file.seek(0)  # Reset file pointer for any additional processing
-
+                    'user_id': user_id
+                }
             except Exception as e:
-                app.logger.error(f"Upload error: {str(e)}")
-                return jsonify({"error": str(e)}), 500
+                return e
 
-        return jsonify({"message": "Files uploaded successfully", "files": uploaded_files}), 200
+        # Process all files concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(process_file, file): file for file in files}
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if isinstance(result, Exception):
+                    errors.append(str(result))
+                elif result is not None:
+                    upload_results.append(result)
+
+        # If any error occurred, log it and return an error response
+        if errors:
+            app.logger.error("Upload errors: " + "; ".join(errors))
+            return jsonify({"error": "One or more files failed to upload", "details": errors}), 500
+
+        # Bulk insert file metadata into Supabase
+        try:
+            supabase.table('files').insert(upload_results).execute()
+        except Exception as e:
+            app.logger.error(f"Supabase insert error: {str(e)}")
+            return jsonify({"error": "Failed to save file metadata", "details": str(e)}), 500
+
+        # Return the list of uploaded filenames
+        uploaded_filenames = [record['filename'] for record in upload_results]
+        return jsonify({"message": "Files uploaded successfully", "files": uploaded_filenames}), 200
 
     return render_template('upload.html')
 
