@@ -191,7 +191,7 @@ def dashboard():
 
 # -------- Data Calculation ---------------------------------------------------------- #
 def calculate_storage_for_user(user_id):
-    total_storage = 20000 * 1024 * 1024  # 5GB in bytes
+    total_storage = 100 * 1024 * 1024 * 1024  #100GB in bytes
     used_storage = 0
     file_counts = {
         "files": 0,

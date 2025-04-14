@@ -22,7 +22,7 @@ const fileList = document.getElementById("file-list");
 const uploadButton = document.getElementById("upload-button");
 let files = []; // To store the files
 const fileHashes = new Set(); // To track unique file hashes
-const MAX_TOTAL_STORAGE = 20 * 1024 * 1024 * 1024; // 20GB total storage limit
+const MAX_TOTAL_STORAGE = 100 * 1024 * 1024 * 1024; // 100GB total storage limit
 let totalUploadedSize = 0; // Tracks total uploaded size
 
 // Prevent default drag behaviors
@@ -138,7 +138,7 @@ uploadButton.addEventListener("click", async () => {
   // Check if the projected total size exceeds the limit
   if (projectedTotalSize > MAX_TOTAL_STORAGE) {
     showToast("Uploading Files .....");
-    showToast(`Total storage will exceed 20GB! Upload not allowed.`, "error");
+    showToast(`Total storage will exceed 100GB! Upload not allowed.`, "error");
     return;
   }
 
