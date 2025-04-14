@@ -104,17 +104,8 @@ p {
   font-weight: bold;
 }
 
-.others {
-  text-align: center;
-  margin-top: 20vh;
-  border-radius: 5px;
-  font-size: 16px;
-  width: 10vw;
-  height: 6vh;
-  border: 3px solid gold;
-}
-
 .others1 {
+  margin-top: 20vh;
   margin: 0;
   color: red;
 }
