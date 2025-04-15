@@ -1,242 +1,123 @@
-// Show toast messages
-function showToast(message, type = "info") {
-  const toastContainer = document.getElementById("toast-container");
-  const toast = document.createElement("div");
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.remove();
-  }, 3500);
-}
-
-// Function to check if the table has any files and update visibility
-function toggleFilePrompt() {
-  const fileTableBody = document.querySelector("#file-list tbody");
-  const hiddenPrompt = document.getElementById("hidden-prompt");
-  const tableContainer = document.querySelector(".table-container");
-  if (fileTableBody.rows.length === 0) {
-    hiddenPrompt.style.display = "flex";
-    tableContainer.style.display = "none";
-  } else {
-    hiddenPrompt.style.display = "none";
-    tableContainer.style.display = "block";
-  }
-}
-
-// Fetch files from the server and display them
-async function fetchFiles() {
-  try {
-    const response = await fetch("/files/list");
-    if (!response.ok) throw new Error("Failed to load files.");
-    const data = await response.json();
-    const fileTableBody = document.querySelector("#file-list tbody");
-    const sortBy = document.getElementById("sort-options").value;
-    const fragment = document.createDocumentFragment();
-    const displayedFiles = new Set();
-
-    // Pre-compile static elements for action icons
-    const createActionIcons = (fileName) => {
-      const actionCell = document.createElement("td");
-
-      const downloadIcon = new Image();
-      downloadIcon.src = "/static/icons/download.png";
-      downloadIcon.alt = "Download";
-      downloadIcon.classList.add("action-icon");
-      downloadIcon.onclick = () => downloadFile(fileName);
-      actionCell.appendChild(downloadIcon);
-
-      const deleteIcon = new Image();
-      deleteIcon.src = "/static/icons/delete.png";
-      deleteIcon.alt = "Delete";
-      deleteIcon.classList.add("action-icon");
-      deleteIcon.onclick = () => deleteFile(fileName);
-      actionCell.appendChild(deleteIcon);
-
-      return actionCell;
-    };
-
-    for (const file of data.files) {
-      if (displayedFiles.has(file.name)) continue;
-      displayedFiles.add(file.name);
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${file.name}</td>
-        <td>${formatFileSize(file.size)}</td>
-        <td>${file.type}</td>
-        <td>${file.last_modified}</td>
-      `;
-      row.appendChild(createActionIcons(file.name));
-      fragment.appendChild(row);
+document.addEventListener("DOMContentLoaded", function () {
+  function updateBarWidths(data) {
+    function setBarWidth(barSelector, value, maxValue) {
+      const minPercent = 2;
+      const maxPercent = 80;
+      const width = Math.max(
+        minPercent,
+        Math.min(
+          maxPercent,
+          (value / maxValue) * (maxPercent - minPercent) + minPercent
+        )
+      );
+      document.querySelector(barSelector).style.width = `${width}%`;
     }
 
-    fileTableBody.innerHTML = "";
-    fileTableBody.appendChild(fragment);
-    sortFiles(sortBy);
-    toggleFilePrompt();
-  } catch (error) {
-    showToast("Error fetching files: " + error.message);
-  }
-}
+    const maxValue = Math.max(data.documents, data.images, data.others);
 
-// Function to download a file
-async function downloadFile(fileName) {
-  try {
-    showToast("Preparing download...", "info");
-    const response = await fetch(
-      `/files/download/${encodeURIComponent(fileName)}`,
-      {
-        credentials: "include",
+    setBarWidth("#bar-1", data.documents, maxValue);
+    setBarWidth("#bar-2", data.images, maxValue);
+    setBarWidth("#bar-3", data.others, maxValue);
+  }
+
+  // Function to animate counting
+  function animateCount(target, value, duration) {
+    let current = parseFloat(document.querySelector(target).textContent) || 0;
+    const increment = (value - current) / (duration / 16);
+    const element = document.querySelector(target);
+
+    function step() {
+      current += increment;
+      if (
+        (increment > 0 && current >= value) ||
+        (increment < 0 && current <= value)
+      ) {
+        element.textContent = value.toFixed(2);
+      } else {
+        element.textContent = current.toFixed(2);
+        requestAnimationFrame(step);
       }
-    );
-    if (!response.ok) throw new Error("Failed to download file");
-    const blob = await response.blob();
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    URL.revokeObjectURL(link.href);
-    document.body.removeChild(link);
-    showToast("Download started!", "success");
-  } catch (error) {
-    console.error("Download error:", error);
-    showToast(`Download failed: ${error.message}`, "error");
-  }
-}
-
-// Function to delete a file
-async function deleteFile(fileName) {
-  const confirmed = confirm("Are you sure you want to delete this file?");
-  if (!confirmed) return;
-  try {
-    const response = await fetch(`/files/delete/${fileName}`, {
-      method: "DELETE",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (response.ok) {
-      showToast("File deleted successfully!", "success");
-      fetchFiles(); // Refresh file list
-    } else {
-      const errorData = await response.json();
-      console.error("Delete error:", errorData);
-      showToast("Failed to delete the file.", "error");
     }
-  } catch (error) {
-    console.error("Delete error:", error);
-    showToast("Error deleting file: " + error, "error");
-  }
-}
-
-// Helper to parse file size for sorting
-function parseFileSize(sizeStr) {
-  const units = {
-    Bytes: 1,
-    KB: 1024,
-    MB: 1024 ** 2,
-    GB: 1024 ** 3,
-    TB: 1024 ** 4,
-  };
-  const match = sizeStr.match(/^([\d.]+)\s*(Bytes|KB|MB|GB|TB)$/i);
-  if (!match) return 0;
-  const [_, value, unit] = match;
-  return parseFloat(value) * units[unit.toUpperCase()];
-}
-
-// Function to sort files based on selected option
-function sortFiles(sortBy) {
-  const fileTableBody = document.querySelector("#file-list tbody");
-  const rows = Array.from(fileTableBody.querySelectorAll("tr"));
-  rows.sort((a, b) => {
-    let valueA, valueB;
-    switch (sortBy) {
-      case "name":
-        valueA = a.children[0].textContent.toLowerCase();
-        valueB = b.children[0].textContent.toLowerCase();
-        return valueA.localeCompare(valueB);
-      case "size":
-        valueA = parseFileSize(a.children[1].textContent);
-        valueB = parseFileSize(b.children[1].textContent);
-        return valueB - valueA; // Largest to smallest
-      case "type":
-        valueA = a.children[2].textContent.toLowerCase();
-        valueB = b.children[2].textContent.toLowerCase();
-        return valueA.localeCompare(valueB);
-      case "date":
-        const dateA = a.children[3].textContent.trim();
-        const dateB = b.children[3].textContent.trim();
-        valueA = new Date(dateA.replace(" ", "T"));
-        valueB = new Date(dateB.replace(" ", "T"));
-        if (isNaN(valueA.getTime())) valueA = new Date(0);
-        if (isNaN(valueB.getTime())) valueB = new Date(0);
-        return valueB - valueA; // Most recent to oldest
-      default:
-        return 0;
-    }
-  });
-  fileTableBody.innerHTML = "";
-  rows.forEach((row) => fileTableBody.appendChild(row));
-}
-
-// Utility to format file size
-function formatFileSize(bytes) {
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  if (bytes === 0) return "0 Bytes";
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
-}
-
-// Function to filter file list based on search query
-function filterFileList(query) {
-  const tableBody = document.querySelector("#file-list tbody");
-  const rows = Array.from(tableBody.querySelectorAll("tr"));
-  rows.forEach((row) => {
-    const fileNameCell = row.querySelector("td:first-child");
-    if (!fileNameCell) return;
-    const fileName = fileNameCell.textContent.trim().toLowerCase();
-    row.style.display = fileName.includes(query) ? "" : "none";
-  });
-}
-
-// On page load
-document.addEventListener("DOMContentLoaded", async () => {
-  // First, fetch and render all files
-  await fetchFiles();
-
-  // Check if a search query is present in the URL
-  const params = new URLSearchParams(window.location.search);
-  const query = params.get("query");
-  if (query) {
-    filterFileList(query.trim().toLowerCase());
+    step();
   }
 
-  // Also, add an event listener to the separate search element
-  const searchInput = document.querySelector("input.fade-in-1");
-  if (searchInput) {
-    searchInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        const searchQuery = searchInput.value.trim();
-        if (searchQuery) {
-          // Redirect so that the URL reflects the search query; the files page code will auto-filter on load
-          window.location.href = `/files?query=${encodeURIComponent(
-            searchQuery
-          )}`;
-        }
+  /// Function to fetch storage data from backend
+  async function fetchStorageData() {
+    try {
+      const response = await fetch("/api/storage");
+      if (response.ok) {
+        const data = await response.json();
+
+        // Optionally animate counts for other stats (files, documents, etc.)
+        animateCount(
+          "#right > div:nth-child(1) > h3 > span",
+          Math.floor(data.files),
+          1000
+        );
+
+        animateCount(
+          "#right > div:nth-child(2) > h3 > span",
+          data.documents,
+          1000
+        );
+        animateCount(
+          "#right > div:nth-child(3) > h3 > span",
+          data.images,
+          1000
+        );
+        animateCount(
+          "#right > div:nth-child(4) > h3 > span",
+          data.others,
+          1000
+        );
+        updateBarWidths(data);
+        updatePercentage(data.usedStorage, data.totalStorage);
+
+        // Update the total storage span with the used storage in GB
+        document.querySelector(
+          "#total-storage"
+        ).textContent = `${data.usedStorage.toFixed(2)}`;
+      } else {
+        console.error("Failed to fetch storage data");
       }
-    });
+    } catch (error) {
+      console.error("Error fetching storage data:", error);
+    }
+  }
+
+  // Initial fetch to populate storage data
+  fetchStorageData();
+
+  async function updateTotalStorage() {
+    try {
+      // Make an API call to fetch the file list
+      const response = await fetch("/files/list");
+      const data = await response.json();
+
+      if (response.ok) {
+        // Calculate the total storage size in bytes
+        let totalSizeBytes = 0;
+        data.files.forEach((file) => {
+          totalSizeBytes += file.size;
+        });
+
+        // Convert the total size to gigabytes (GB)
+        const totalSizeGB = (totalSizeBytes / 1024 ** 3).toFixed(1);
+
+        // Update the element with the total storage size
+        const totalStorageElement = document.querySelector("#total-storage");
+        totalStorageElement.textContent = `${totalSizeGB}GB`;
+      } else {
+        console.error("Failed to load files");
+      }
+    } catch (error) {
+      console.error("Error fetching file list:", error);
+    }
   }
 });
 
-// A separate call for updating total storage (if used elsewhere)
-document.addEventListener("DOMContentLoaded", () => {
-  updateTotalStorage();
-});
-
-// Function to update percentage if needed
+// Function to update the total storage span
+// Function to calculate and update the percentage
 function updatePercentage(usedStorage, totalStorage) {
   const percentageElement = document.querySelector("#percentage");
   if (window.innerWidth < 764) {
@@ -244,27 +125,13 @@ function updatePercentage(usedStorage, totalStorage) {
   } else {
     percentageElement.style.fontSize = "2.5em";
   }
+
+  // Calculate the percentage
   const percentage = 100 - (usedStorage / totalStorage) * 1000;
   percentageElement.textContent = `${percentage.toFixed(2)}%`;
 }
 
-// Example: Update total storage (assumed to be defined elsewhere)
-async function updateTotalStorage() {
-  try {
-    const response = await fetch("/files/list");
-    const data = await response.json();
-    if (response.ok) {
-      let totalSizeBytes = 0;
-      data.files.forEach((file) => {
-        totalSizeBytes += file.size;
-      });
-      const totalSizeGB = (totalSizeBytes / 1024 ** 3).toFixed(1);
-      const totalStorageElement = document.querySelector("#total-storage");
-      totalStorageElement.textContent = `${totalSizeGB}GB`;
-    } else {
-      console.error("Failed to load files");
-    }
-  } catch (error) {
-    console.error("Error fetching file list:", error);
-  }
-}
+updatePercentage(usedStorage, totalStorage);
+
+// Call the function when the page loads
+document.addEventListener("DOMContentLoaded", updateTotalStorage);
