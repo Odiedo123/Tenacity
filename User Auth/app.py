@@ -5,6 +5,7 @@ import io
 import zipfile
 import requests
 import concurrent.futures
+import time
 from concurrent.futures import ThreadPoolExecutor
 from flask_compress import Compress
 from flask_talisman import Talisman
@@ -333,6 +334,25 @@ def upload():
     return render_template('upload.html')
 
 # -------- File listing ----------------------------------------------------- #
+# In-memory cache for file info: key is filepath, value is a dictionary with info and timestamp.
+FILE_INFO_CACHE = {}
+CACHE_TTL = 60  # Cache time-to-live in seconds
+
+def get_file_info_cached(bucket, filepath):
+    now = time.time()
+    # Check if cached and valid
+    if filepath in FILE_INFO_CACHE:
+        cached = FILE_INFO_CACHE[filepath]
+        if now - cached['timestamp'] < CACHE_TTL:
+            return cached['info']
+    try:
+        info = bucket.get_file_info_by_name(filepath)
+        FILE_INFO_CACHE[filepath] = {'info': info, 'timestamp': now}
+        return info
+    except Exception as e:
+        # Optionally log error here if needed.
+        return None
+
 @app.route('/files/list', methods=['GET'])
 @login_required
 def list_files():
@@ -341,7 +361,7 @@ def list_files():
 
     try:
         # 1. Initialize Backblaze B2
-        b2 = B2Api()
+        b2 = B2Api(InMemoryAccountInfo())
         b2.authorize_account(
             "production",
             application_key_id=os.getenv("B2_KEY_ID"),
@@ -350,33 +370,30 @@ def list_files():
         bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME", "tenacity-files"))
 
         # 2. Fetch files from Supabase
-        supabase_files = supabase.table('files').select(
-            'filename, filepath'
-        ).eq('user_id', session['user_id']).execute().data
+        supabase_files = supabase.table('files').select('filename, filepath')\
+            .eq('user_id', session['user_id']).execute().data
 
         if not supabase_files:
             return jsonify({"files": []})
 
-        # 3. Process files in parallel
+        # 3. Get file info concurrently, using caching to reduce repeated API calls
         with ThreadPoolExecutor(max_workers=10) as executor:
             file_infos = list(executor.map(
-                lambda f: bucket.get_file_info_by_name(f['filepath']),
+                lambda f: get_file_info_cached(bucket, f['filepath']),
                 supabase_files
             ))
 
-        # 4. Format response
+        # 4. Format response using the cached or freshly retrieved file information
         file_list = []
         for file, info in zip(supabase_files, file_infos):
             if not info:
                 continue
-            
             file_list.append({
                 "name": file['filename'],
                 "size": info.content_length,
                 "type": file['filename'].split('.')[-1],
-                "last_modified": datetime.fromtimestamp(
-                    info.upload_timestamp / 1000
-                ).strftime('%Y-%m-%d %H:%M:%S')
+                "last_modified": datetime.fromtimestamp(info.upload_timestamp / 1000)\
+                    .strftime('%Y-%m-%d %H:%M:%S')
             })
 
         return jsonify({"files": file_list})
