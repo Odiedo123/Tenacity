@@ -19,13 +19,10 @@ function toggleFilePrompt() {
   const hiddenPrompt = document.getElementById("hidden-prompt");
   const tableContainer = document.querySelector(".table-container");
 
-  // Check if there are any rows in the table body
   if (fileTableBody.rows.length === 0) {
-    // No files, show the hidden prompt and hide the table
     hiddenPrompt.style.display = "flex";
     tableContainer.style.display = "none";
   } else {
-    // Files exist, hide the hidden prompt and show the table
     hiddenPrompt.style.display = "none";
     tableContainer.style.display = "block";
   }
@@ -40,22 +37,19 @@ async function fetchFiles() {
 
     const fileTableBody = document.querySelector("#file-list tbody");
     const sortBy = document.getElementById("sort-options").value;
-    const fragment = document.createDocumentFragment(); // Optimize DOM updates
-    const displayedFiles = new Set(); // Track duplicates
+    const fragment = document.createDocumentFragment();
+    const displayedFiles = new Set();
 
-    // Pre-compile static elements (e.g., action icons) to avoid repeated work
     const createActionIcons = (fileName) => {
       const actionCell = document.createElement("td");
 
-      // Download icon
-      const downloadIcon = new Image(); // Faster than createElement("img")
+      const downloadIcon = new Image();
       downloadIcon.src = "/static/icons/download.png";
       downloadIcon.alt = "Download";
       downloadIcon.classList.add("action-icon");
       downloadIcon.onclick = () => downloadFile(fileName);
       actionCell.appendChild(downloadIcon);
 
-      // Delete icon
       const deleteIcon = new Image();
       deleteIcon.src = "/static/icons/delete.png";
       deleteIcon.alt = "Delete";
@@ -66,7 +60,6 @@ async function fetchFiles() {
       return actionCell;
     };
 
-    // Batch process files (avoid reflows/repaints)
     for (const file of data.files) {
       if (displayedFiles.has(file.name)) continue;
       displayedFiles.add(file.name);
@@ -82,11 +75,9 @@ async function fetchFiles() {
       fragment.appendChild(row);
     }
 
-    // Single DOM update (reduces layout thrashing)
     fileTableBody.innerHTML = "";
     fileTableBody.appendChild(fragment);
 
-    // Apply sorting (avoid redundant sorts if possible)
     sortFiles(sortBy);
     toggleFilePrompt();
   } catch (error) {
@@ -99,29 +90,21 @@ async function downloadFile(fileName) {
   try {
     showToast("Preparing download...", "info");
 
-    // Request the zip file from the server
     const response = await fetch(
       `/files/download/${encodeURIComponent(fileName)}`,
-      {
-        credentials: "include",
-      }
+      { credentials: "include" }
     );
 
-    if (!response.ok) {
-      throw new Error("Failed to download file");
-    }
+    if (!response.ok) throw new Error("Failed to download file");
 
-    // Convert response into a Blob (binary data)
     const blob = await response.blob();
 
-    // Create a download link
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${fileName}.zip`; // Ensure the file is downloaded as a zip
+    link.download = `${fileName}.zip`;
     document.body.appendChild(link);
     link.click();
 
-    // Cleanup
     URL.revokeObjectURL(link.href);
     document.body.removeChild(link);
 
@@ -148,7 +131,7 @@ async function deleteFile(fileName) {
 
     if (response.ok) {
       showToast("File deleted successfully!", "success");
-      fetchFiles(); // Refresh the file list
+      fetchFiles();
     } else {
       const errorData = await response.json();
       console.error("Delete error:", errorData);
@@ -193,7 +176,7 @@ function sortFiles(sortBy) {
       case "size":
         valueA = parseFileSize(a.children[1].textContent);
         valueB = parseFileSize(b.children[1].textContent);
-        return valueB - valueA; // Sort from largest to smallest
+        return valueB - valueA;
 
       case "type":
         valueA = a.children[2].textContent.toLowerCase();
@@ -207,7 +190,8 @@ function sortFiles(sortBy) {
         valueB = new Date(dateB.replace(" ", "T"));
         if (isNaN(valueA.getTime())) valueA = new Date(0);
         if (isNaN(valueB.getTime())) valueB = new Date(0);
-        return valueB - valueA; // Sort from most recent to oldest
+        return valueB - valueA;
+
       default:
         return 0;
     }
@@ -232,7 +216,31 @@ sortSelect.addEventListener("change", function () {
   sortFiles(selectedSort);
 });
 
-// Call fetchFiles when the page loads
+// Function to filter files based on search query
+function filterFileList(query) {
+  const tableBody = document.querySelector("#file-list tbody");
+  const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+  rows.forEach((row) => {
+    const fileNameCell = row.querySelector("td:first-child");
+    if (!fileNameCell) return;
+    const fileName = fileNameCell.textContent.trim().toLowerCase();
+    row.style.display = fileName.includes(query) ? "" : "none";
+  });
+}
+
+// On page load
 document.addEventListener("DOMContentLoaded", () => {
   fetchFiles();
+
+  const searchInput = document.getElementById("fade-in-1");
+  if (searchInput) {
+    searchInput.addEventListener("keypress", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const searchQuery = searchInput.value.trim().toLowerCase();
+        filterFileList(searchQuery);
+      }
+    });
+  }
 });
