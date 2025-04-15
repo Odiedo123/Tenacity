@@ -360,15 +360,6 @@ def list_files():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # 1. Initialize Backblaze B2
-        b2 = B2Api(InMemoryAccountInfo())
-        b2.authorize_account(
-            "production",
-            application_key_id=os.getenv("B2_KEY_ID"),
-            application_key=os.getenv("B2_APPLICATION_KEY")
-        )
-        bucket = b2.get_bucket_by_name(os.getenv("B2_BUCKET_NAME", "tenacity-files"))
-
         # 2. Fetch files from Supabase
         supabase_files = supabase.table('files').select('filename, filepath')\
             .eq('user_id', session['user_id']).execute().data
