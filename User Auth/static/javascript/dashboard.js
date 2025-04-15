@@ -88,8 +88,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initial fetch to populate storage data
   fetchStorageData();
 
-  setInterval(fetchStorageData, 5000); // Refresh every 5 seconds
-
   async function updateTotalStorage() {
     try {
       // Make an API call to fetch the file list
