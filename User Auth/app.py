@@ -336,7 +336,7 @@ def upload():
 # -------- File listing ----------------------------------------------------- #
 # In-memory cache for file info: key is filepath, value is a dictionary with info and timestamp.
 FILE_INFO_CACHE = {}
-CACHE_TTL = 60  # Cache time-to-live in seconds
+CACHE_TTL = 90  # Cache time-to-live in seconds
 
 def get_file_info_cached(bucket, filepath):
     now = time.time()
