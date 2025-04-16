@@ -225,11 +225,6 @@ body {
   width: 100px;
 }
 
-#fade-in-1 {
-  opacity: 0;
-  animation: fadeIn 1s forwards;
-}
-
 #fade-in-2 {
   opacity: 0;
   animation: fadeIn 1s forwards;
