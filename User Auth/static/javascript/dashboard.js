@@ -115,8 +115,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  //Adding search functionality
-  const searchInput = document.getElementById("fade-in-1");
+  // Adding search functionality
+  const searchInput = document.querySelector(".fade-in-1");
   if (searchInput) {
     searchInput.addEventListener("keypress", (event) => {
       if (event.key === "Enter") {
