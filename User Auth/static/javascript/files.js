@@ -231,8 +231,6 @@ function filterFileList(query) {
 
 // On page load
 document.addEventListener("DOMContentLoaded", () => {
-  fetchFiles();
-
   const searchInput = document.getElementById("fade-in-1");
 
   // Apply search from query string if available
@@ -240,8 +238,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const query = urlParams.get("q");
   if (query) {
     if (searchInput) searchInput.value = query;
-    setTimeout(() => filterFileList(query.toLowerCase()), 250); // slight delay to ensure files are loaded
   }
+
+  fetchFiles().then(() => {
+    if (query) {
+      filterFileList(query.toLowerCase());
+    }
+  });
 
   if (searchInput) {
     searchInput.addEventListener("keypress", (event) => {
