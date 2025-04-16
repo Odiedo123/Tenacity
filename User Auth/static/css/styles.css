@@ -307,8 +307,8 @@ span {
 }
 
 div[class*="box"] {
-  height: 33.33%;
-  width: 100%;
+  height: 70px;
+  width: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
