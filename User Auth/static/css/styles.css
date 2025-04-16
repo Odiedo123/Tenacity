@@ -322,7 +322,7 @@ div[class*="box"] {
   cursor: pointer;
 }
 
-btn-three {
+.btn-three {
   color: #fff;
   transition: all 0.5s;
   position: relative;
@@ -359,11 +359,6 @@ btn-three {
 .btn-three:hover::after {
   opacity: 1;
   transform: scale(1, 1);
-}
-
-#second-section div button:hover {
-  transform: translateX(10px);
-  background-color: #f57c04;
 }
 
 #third-section {
