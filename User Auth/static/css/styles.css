@@ -210,8 +210,8 @@ span {
 #sign-up {
   font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 16px;
-  height: 10vh;
-  width: 15vw;
+  height: 100px;
+  width: 200px;
   border-radius: 5px;
   border: 1px solid #ff6f00;
   margin-top: 3vh;
