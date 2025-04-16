@@ -129,6 +129,20 @@ function updatePercentage(usedStorage, totalStorage) {
   // Calculate the percentage
   const percentage = 100 - (usedStorage / totalStorage) * 1000;
   percentageElement.textContent = `${percentage.toFixed(2)}%`;
+
+  //Adding search functionality
+  const searchInput = document.getElementById("fade-in-1");
+  if (searchInput) {
+    searchInput.addEventListener("keypress", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const searchQuery = encodeURIComponent(searchInput.value.trim());
+        if (searchQuery) {
+          window.location.href = `/files?q=${searchQuery}`;
+        }
+      }
+    });
+  }
 }
 
 updatePercentage(usedStorage, totalStorage);

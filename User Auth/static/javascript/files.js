@@ -234,6 +234,15 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchFiles();
 
   const searchInput = document.getElementById("fade-in-1");
+
+  // Apply search from query string if available
+  const urlParams = new URLSearchParams(window.location.search);
+  const query = urlParams.get("q");
+  if (query) {
+    if (searchInput) searchInput.value = query;
+    setTimeout(() => filterFileList(query.toLowerCase()), 250); // slight delay to ensure files are loaded
+  }
+
   if (searchInput) {
     searchInput.addEventListener("keypress", (event) => {
       if (event.key === "Enter") {
