@@ -312,7 +312,7 @@ span {
   padding: 10px;
   margin-top: 20px;
   background-color: #ff6f00;
-  border: 2px solid black;
+  border: 1px solid grey;
   border-radius: 5px;
   font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 1em;
@@ -321,6 +321,7 @@ span {
 }
 
 #second-section div button:hover {
+  border: none;
   box-shadow: 0 0 10px #f57c04, 0 0 20px #f57c04, 0 0 30px #f57c04;
 }
 
