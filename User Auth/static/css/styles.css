@@ -306,15 +306,13 @@ span {
   margin-top: 10px;
 }
 
-div[class*="box"] {
+.box-3 {
+  background-color: #66a182;
   height: 100px;
   width: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
-}
-.box-3 {
-  background-color: #66a182;
 }
 
 .btn {
