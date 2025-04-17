@@ -312,7 +312,7 @@ span {
   padding: 10px;
   margin-top: 20px;
   background-color: #ff6f00;
-  border: none;
+  border: 2px solid black;
   border-radius: 5px;
   font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 1em;
