@@ -307,12 +307,12 @@ span {
 }
 
 #second-section div button {
-  width: 8vw;
-  height: 6vh;
+  width: 125px;
+  height: 65px;
   padding: 10px;
   margin-top: 20px;
   background-color: #ff6f00;
-  border: 1px solid grey;
+  border: none;
   border-radius: 5px;
   font-family: "Google Sans", Arial, Helvetica, sans-serif;
   font-size: 1em;
