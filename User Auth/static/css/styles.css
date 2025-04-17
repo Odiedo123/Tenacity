@@ -307,7 +307,7 @@ span {
 }
 
 .box-3 {
-  background-color: #66a182;
+  border: 3px solid red;
   height: 100px;
   width: 300px;
   display: flex;
@@ -321,6 +321,7 @@ span {
   text-align: center;
   width: 250px;
   cursor: pointer;
+  border: 3px solid yellow;
 }
 
 /* 
@@ -332,6 +333,7 @@ span {
   color: #fff;
   transition: all 0.5s;
   position: relative;
+  border: 3px solid green;
 }
 .btn-three::before {
   content: "";
