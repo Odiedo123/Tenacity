@@ -52,14 +52,6 @@ span {
   cursor: pointer;
 }
 
-#tenacity_logo {
-  width: 175px;
-  height: 50px;
-  cursor: pointer;
-  margin-left: 20px;
-  margin-top: 0px;
-}
-
 #motto {
   font-size: 1.2rem;
   text-align: center;
