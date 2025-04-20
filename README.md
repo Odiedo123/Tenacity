@@ -1,10 +1,10 @@
-# 📁 **Tenacity**
+# **Tenacity**
 
-## 🚀 **Overview**
+## **Overview**
 
 Welcome to **Tenacity** — the ultimate platform for secure and efficient file saving and management. Whether you're organizing personal documents or collaborating on professional projects, our platform ensures seamless file handling with intuitive user experiences.
 
-## 🌟 **Key Features**
+## **Key Features**
 
 - **Secure File Storage:** Store your files with industry-standard encryption.
 - **Easy File Management:** Organize, search, and access your files effortlessly.
@@ -12,18 +12,18 @@ Welcome to **Tenacity** — the ultimate platform for secure and efficient file 
 - **Real-Time Sync:** Automatic synchronization across devices.
 - **User-Friendly Interface:** Clean and minimal design for a better experience.
 
-## 💻 **Technology Stack**
+## **Technology Stack**
 
 - **Frontend:** HTML, CSS, JavaScript
 - **Backend:** Flask (Python)
 - **Database:** MySQL
 - **Hosting:** Render and Supabase
 
-## 📸 **Screenshots**
+## **Screenshots**
 
 ![Website Screenshot](website-screenshot.png)
 
-## 🛠️ **Installation**
+## **Installation**
 
 1. Clone the repository:
 
@@ -39,7 +39,7 @@ flask run
 
 3. Access the app at `https://www.tenacity.ct.ws`
 
-## 🌐 **Live Demo**
+## **Live Demo**
 
 Check out the live version: (https://app.arcade.software/share/U1IhFrdvOVQUdHQM26OA)
 
@@ -48,11 +48,11 @@ Check out the live version: (https://app.arcade.software/share/U1IhFrdvOVQUdHQM2
 - **Sign Up / Login:** Users can create accounts and securely log in.
 - **Session Management:** Session-based user authentication.
 
-## 📚 **Documentation**
+## **Documentation**
 
 For more details, check the full documentation [here](#).
 
-## 🤝 **Contributing**
+## **Contributing**
 
 1. Fork the repository.
 2. Create a new branch:
@@ -75,13 +75,13 @@ git push origin feature-branch
 
 5. Open a pull request.
 
-## 📧 **Contact**
+## **Contact**
 
 - **Email:** [tenacity.cloud.storage@gmail.com]
 - **LinkedIn:** [Odiedo123]
 - **GitHub:** [Odiedo123]
 
-## 📝 **License**
+## **License**
 
 This project is licensed under the [MIT License](LICENSE).
 
