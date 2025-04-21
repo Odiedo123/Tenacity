@@ -43,14 +43,18 @@
 <body>
     <div class="container">
         <div id="sidebar">
-          <h1 id="logo" onclick="window.location.href='/'">Tenacity</h1>
+          <h1 id="logo" onclick="window.location.href='/'">          
+            <a href="/" style="text-decoration: none; color: inherit"
+            >Tenacity</a>   
+          </h1>
           <div
             class="sidebar-section"
             id="home"
             onclick="window.location.href='/home'"
           >
             <img src="{{ url_for('static', filename='icons/home.png') }}" />
-            <a onclick="window.location.href='/home'">Home</a>
+            <a href="/home" style="text-decoration: none; color: inherit"
+            >Home</a>   
           </div>
           <div
             class="sidebar-section"
@@ -58,7 +62,8 @@
             onclick="window.location.href='/dashboard'"
           >
             <img src="{{ url_for('static', filename='icons/dashboard.png') }}" />
-            <a onclick="window.location.href='/dashboard'">Dashboard</a>
+            <a href="/dashboard" style="text-decoration: none; color: inherit"
+            >Dashboard</a>   
           </div>
           <div
             class="sidebar-section"
@@ -66,7 +71,8 @@
             onclick="window.location.href='/files'"
           >
             <img src="{{ url_for('static', filename='icons/folder.png') }}" />
-            <a onclick="window.location.href='/files'">My Files</a>
+            <a href="/files" style="text-decoration: none; color: inherit"
+            >My Files</a>   
           </div>
           <div
           class="sidebar-section"
@@ -74,7 +80,8 @@
           onclick="window.location.href='/upload'"
         >
           <img src="{{ url_for('static', filename='icons/upload.png') }}" />
-          <a onclick="window.location.href='/files'">Upload</a>
+          <a href="/upload" style="text-decoration: none; color: inherit"
+          >Upload</a>   
           <div id="marker"></div>
           </div>
           <a class="others1" onclick="window.location.href='/logout'"
