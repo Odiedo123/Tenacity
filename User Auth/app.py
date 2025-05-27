@@ -24,7 +24,7 @@ Compress(app)
 
 csp = {
     'default-src': ["'self'"],  # Keep default security
-    'script-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://demo.arcade.software", "https://www.googletagmanager.com", "https://offfurreton.com", "https://thoukouxou.net"],  # Allow inline scripts
+    'script-src': ["'self'", "'unsafe-inline'","'unsafe-eval'", "https://fonts.googleapis.com", "https://demo.arcade.software", "https://www.googletagmanager.com", "https://offfurreton.com", "https://thoukouxou.net"],  # Allow inline scripts
     'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline styles
     'img-src': ["'self'", "data:", "*.backblazeb2.com", "https://api.producthunt.com", "https://thoukouxou.net"],  # Allow images from Backblaze
     'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://tupnobmhar.xyz", "https://thoukouxou.net"],  # Allow API calls (uploads)
