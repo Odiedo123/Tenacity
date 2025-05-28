@@ -27,7 +27,7 @@ csp = {
     'script-src': ["'self'", "'unsafe-inline'","'unsafe-eval'", "https://fonts.googleapis.com", "https://demo.arcade.software", "https://www.googletagmanager.com", "https://offfurreton.com", "https://thoukouxou.net", "https://tzegilo.com"],  # Allow inline scripts
     'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],  # Allow inline styles
     'img-src': ["'self'", "data:", "*.backblazeb2.com", "https://api.producthunt.com", "https://thoukouxou.net", 'https://offfurreton.com' ,'https://bobapsoabauns.com', 'blob'],  # Allow images from Backblaze
-    'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://tupnobmhar.xyz", "https://thoukouxou.net", "https://cqrhitck.xyz/", 'https://offfurreton.com', "https://my.rtmark.net"],  # Allow API calls (uploads)
+    'connect-src': ["'self'", "https://api.backblazeb2.com", "*.backblazeb2.com", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://tupnobmhar.xyz", "https://thoukouxou.net", "https://cqrhitck.xyz/", 'https://offfurreton.com', "https://my.rtmark.net", "https://fleraprt.com"],  # Allow API calls (uploads)
     'font-src': ["'self'", "https://fonts.gstatic.com"],
     'frame-ancestors': ["'self'", "https://demo.arcade.software"],
     'frame-src': ["https://demo.arcade.software", "https://thoukouxou.net"],
